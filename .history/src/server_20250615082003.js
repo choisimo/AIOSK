@@ -6,20 +6,6 @@ const cors = require('cors'); // Import CORS
 const http = require('http');
 const { Server } = require("socket.io");
 
-// 로깅 및 에러 처리 미들웨어 import
-const logger = require('./utils/logger');
-const { 
-  globalErrorHandler, 
-  notFoundHandler 
-} = require('./middleware/error.middleware');
-const {
-  requestLogger,
-  requestId,
-  errorLogger,
-  performanceLogger,
-  securityLogger
-} = require('./middleware/logging.middleware');
-
 // const db = require('./models/db.js'); // The db.js already attempts connection, so direct import here is for awareness or if pool is needed directly.
 
 const app = express();
@@ -33,21 +19,15 @@ const io = new Server(httpServer, {
 
 app.set('io', io); // Make io accessible in routes
 
-// 로깅 미들웨어 적용 (가장 먼저)
-app.use(requestId);
-app.use(requestLogger);
-app.use(performanceLogger);
-app.use(securityLogger);
-
 // CORS Configuration (Basic - allow all for now, can be configured more strictly)
 app.use(cors()); 
 // Or for specific origin:
 // app.use(cors({ origin: 'http://localhost:YOUR_FRONTEND_PORT' }));
 
 // Middleware to parse JSON bodies
-app.use(express.json({ limit: '10mb' }));
+app.use(express.json());
 // Middleware to parse URL-encoded bodies
-app.use(express.urlencoded({ extended: true, limit: '10mb' }));
+app.use(express.urlencoded({ extended: true }));
 
 // 정적 파일 제공 설정 (업로드된 이미지 접근용)
 app.use('/uploads', express.static('uploads'));
@@ -83,14 +63,11 @@ app.use('/api/admin/orders', adminOrderRoutes);
 const adminStatisticsRoutes = require("./routes/admin/statistics.routes.js");
 app.use('/api/admin/statistics', adminStatisticsRoutes);
 
-// 404 에러 처리 (모든 라우트 뒤에 위치)
-app.use(notFoundHandler);
-
-// 에러 로깅 미들웨어
-app.use(errorLogger);
-
-// 중앙화된 에러 처리 미들웨어 (가장 마지막에 위치)
-app.use(globalErrorHandler);
+// Centralized Error Handling (Optional but good practice for later)
+// app.use((err, req, res, next) => {
+//   console.error(err.stack);
+//   res.status(500).send({ message: 'Something broke!', error: err.message });
+// });
 
 // Socket.IO connection listeners
 io.on('connection', (socket) => {
@@ -103,54 +80,17 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3000;
 httpServer.listen(PORT, () => { // Changed app.listen to httpServer.listen
-  logger.logInfo(`Server is running on port ${PORT}`, { 
-    environment: process.env.NODE_ENV || 'development',
-    port: PORT 
-  });
-  
+  console.log(`Server is running on port ${PORT}.`);
   // The database connection test is already within src/models/db.js
   // If you want an additional check here, you could try a simple query:
   /*
   const sql = require('./models/db.js'); // Get the promisePool
   sql.query('SELECT 1')
     .then(() => {
-      logger.logInfo('Database connection verified successfully from server.js on startup.');
+      console.log('Database connection verified successfully from server.js on startup.');
     })
     .catch(err => {
-      logger.logError(err);
+      console.error('Failed to verify database connection from server.js on startup:', err);
     });
   */
-});
-
-// Graceful shutdown handling
-process.on('SIGTERM', () => {
-  logger.logInfo('SIGTERM received. Shutting down gracefully...');
-  httpServer.close(() => {
-    logger.logInfo('Process terminated');
-    process.exit(0);
-  });
-});
-
-process.on('SIGINT', () => {
-  logger.logInfo('SIGINT received. Shutting down gracefully...');
-  httpServer.close(() => {
-    logger.logInfo('Process terminated');
-    process.exit(0);
-  });
-});
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (err) => {
-  logger.logError(err);
-  logger.logError(new Error('Uncaught Exception! 💥 Shutting down...'));
-  process.exit(1);
-});
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (err) => {
-  logger.logError(err);
-  logger.logError(new Error('Unhandled Rejection! 💥 Shutting down...'));
-  httpServer.close(() => {
-    process.exit(1);
-  });
 });

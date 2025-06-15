@@ -103,54 +103,17 @@ io.on('connection', (socket) => {
 
 const PORT = process.env.PORT || 3000;
 httpServer.listen(PORT, () => { // Changed app.listen to httpServer.listen
-  logger.logInfo(`Server is running on port ${PORT}`, { 
-    environment: process.env.NODE_ENV || 'development',
-    port: PORT 
-  });
-  
+  console.log(`Server is running on port ${PORT}.`);
   // The database connection test is already within src/models/db.js
   // If you want an additional check here, you could try a simple query:
   /*
   const sql = require('./models/db.js'); // Get the promisePool
   sql.query('SELECT 1')
     .then(() => {
-      logger.logInfo('Database connection verified successfully from server.js on startup.');
+      console.log('Database connection verified successfully from server.js on startup.');
     })
     .catch(err => {
-      logger.logError(err);
+      console.error('Failed to verify database connection from server.js on startup:', err);
     });
   */
-});
-
-// Graceful shutdown handling
-process.on('SIGTERM', () => {
-  logger.logInfo('SIGTERM received. Shutting down gracefully...');
-  httpServer.close(() => {
-    logger.logInfo('Process terminated');
-    process.exit(0);
-  });
-});
-
-process.on('SIGINT', () => {
-  logger.logInfo('SIGINT received. Shutting down gracefully...');
-  httpServer.close(() => {
-    logger.logInfo('Process terminated');
-    process.exit(0);
-  });
-});
-
-// Handle uncaught exceptions
-process.on('uncaughtException', (err) => {
-  logger.logError(err);
-  logger.logError(new Error('Uncaught Exception! 💥 Shutting down...'));
-  process.exit(1);
-});
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (err) => {
-  logger.logError(err);
-  logger.logError(new Error('Unhandled Rejection! 💥 Shutting down...'));
-  httpServer.close(() => {
-    process.exit(1);
-  });
 });

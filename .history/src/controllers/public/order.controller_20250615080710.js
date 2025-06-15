@@ -1,0 +1,92 @@
+// src/controllers/public/order.controller.js
+const Order = require("../../models/order.model.js");
+
+// 공개 주문 생성 (인증 불필요)
+exports.create = async (req, res) => {
+  // 요청 데이터 검증
+  if (!req.body.items || !Array.isArray(req.body.items) || req.body.items.length === 0) {
+    return res.status(400).json({
+      message: "주문 항목이 필요합니다. 'items' 배열에 최소 하나의 항목을 포함해야 합니다."
+    });
+  }
+
+  // 각 주문 항목 유효성 검증
+  for (const item of req.body.items) {
+    if (item.menuId === undefined || item.quantity === undefined) {
+      return res.status(400).json({ 
+        message: "각 주문 항목에는 menuId와 quantity가 필요합니다." 
+      });
+    }
+    
+    if (typeof item.menuId !== 'number' || item.menuId <= 0) {
+      return res.status(400).json({ 
+        message: `유효하지 않은 메뉴 ID입니다: ${item.menuId}. 양의 정수여야 합니다.` 
+      });
+    }
+    
+    if (typeof item.quantity !== 'number' || item.quantity <= 0) {
+      return res.status(400).json({ 
+        message: `유효하지 않은 수량입니다: ${item.quantity}. 양의 정수여야 합니다.` 
+      });
+    }
+  }
+  
+  // 주문 데이터 구성 (공개 API에서는 기본 상태로 설정)
+  const orderData = {
+    items: req.body.items.map(item => ({
+      menu_id: item.menuId,
+      quantity: item.quantity
+    })),
+    status: 'RECEIVED' // 공개 API에서 생성되는 주문의 기본 상태
+  };
+
+  try {
+    // 주문 생성
+    const createdOrder = await Order.create(orderData);
+    
+    // 상세 주문 정보 조회 (메뉴 이름 포함)
+    const detailedOrder = await Order.findById(createdOrder.id);
+    
+    // Socket.IO를 통한 실시간 알림 전송
+    const io = req.app.get('io');
+    if (io && detailedOrder) {
+      io.emit('new_order', {
+        orderId: detailedOrder.id,
+        totalPrice: detailedOrder.total_price,
+        status: detailedOrder.status,
+        createdAt: detailedOrder.created_at,
+        items: detailedOrder.items
+      });
+    }
+    
+    // 공개 API 스펙에 맞는 응답 형식 구성
+    const publicOrderResponse = {
+      orderId: detailedOrder.id,
+      totalPrice: parseFloat(detailedOrder.total_price),
+      status: detailedOrder.status,
+      createdAt: detailedOrder.created_at,
+      items: detailedOrder.items.map(item => ({
+        menuName: item.menu_name,
+        quantity: item.quantity,
+        price: parseFloat(item.price_per_item) * item.quantity
+      }))
+    };
+    
+    res.status(201).json(publicOrderResponse);
+  } catch (error) {
+    console.error("공개 API 주문 생성 오류:", error.message, error.details || error);
+    
+    // 모델에서 던진 특정 에러 메시지 처리
+    if (error.message.includes("not available or not for sale") || 
+        error.message.includes("must be positive")) {
+      return res.status(400).json({ 
+        message: error.message 
+      });
+    }
+    
+    // 일반적인 서버 오류
+    res.status(500).json({
+      message: "주문 처리 중 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
+    });
+  }
+};
