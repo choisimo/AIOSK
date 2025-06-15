@@ -1,0 +1,53 @@
+-- Make sure to use the correct database
+-- USE kiosk_db;
+
+-- 1. Admins Table
+CREATE TABLE IF NOT EXISTS `Admins` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `username` VARCHAR(255) NOT NULL UNIQUE,
+  `password` VARCHAR(255) NOT NULL,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 2. Categories Table
+CREATE TABLE IF NOT EXISTS `Categories` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `name` VARCHAR(255) NOT NULL,
+  `sort_order` INT NOT NULL DEFAULT 0,
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 3. Menus Table
+CREATE TABLE IF NOT EXISTS `Menus` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `category_id` INT,
+  `name` VARCHAR(255) NOT NULL,
+  `price` DECIMAL(10, 2) NOT NULL,
+  `image_url` VARCHAR(2048),
+  `description` TEXT,
+  `status` VARCHAR(50) NOT NULL DEFAULT 'FOR_SALE' COMMENT 'e.g., FOR_SALE, SOLD_OUT',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP,
+  FOREIGN KEY (`category_id`) REFERENCES `Categories`(`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 4. Orders Table
+CREATE TABLE IF NOT EXISTS `Orders` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `total_price` DECIMAL(10, 2) NOT NULL,
+  `status` VARCHAR(50) NOT NULL DEFAULT 'RECEIVED' COMMENT 'e.g., RECEIVED, PREPARING, COMPLETED, CANCELLED',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  `updated_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP COMMENT 'To track status updates'
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
+-- 5. OrderItems Table
+CREATE TABLE IF NOT EXISTS `OrderItems` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `order_id` INT NOT NULL,
+  `menu_id` INT, -- Allow menu_id to be NULL if a menu gets deleted
+  `quantity` INT NOT NULL,
+  `price_per_item` DECIMAL(10, 2) NOT NULL COMMENT 'Price of the menu item at the time of order',
+  `created_at` TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+  FOREIGN KEY (`order_id`) REFERENCES `Orders`(`id`) ON DELETE CASCADE ON UPDATE CASCADE,
+  FOREIGN KEY (`menu_id`) REFERENCES `Menus`(`id`) ON DELETE SET NULL ON UPDATE CASCADE
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
