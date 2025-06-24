@@ -1,0 +1,402 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>키오스크 모니터링</h2>
+    <div class="d-flex gap-2">
+        <button class="btn btn-success" id="refreshBtn">
+            <i class="fas fa-sync-alt"></i> 새로고침
+        </button>
+        <div class="btn-group" role="group">
+            <input type="radio" class="btn-check" name="viewMode" id="gridView" autocomplete="off" checked>
+            <label class="btn btn-outline-primary" for="gridView"><i class="fas fa-th"></i></label>
+            
+            <input type="radio" class="btn-check" name="viewMode" id="listView" autocomplete="off">
+            <label class="btn btn-outline-primary" for="listView"><i class="fas fa-list"></i></label>
+        </div>
+    </div>
+</div>
+
+<!-- 키오스크 상태 개요 -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">온라인 키오스크</h6>
+                        <h3>3</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-desktop fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">오프라인 키오스크</h6>
+                        <h3>1</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-exclamation-triangle fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">활성 세션</h6>
+                        <h3>7</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">오늘 거래</h6>
+                        <h3>156</h3>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-cash-register fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 키오스크 목록 (그리드 뷰) -->
+<div id="gridViewContent">
+    <div class="row">
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">키오스크 #001</h6>
+                    <span class="badge bg-light text-success">온라인</span>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h5>12</h5>
+                            <small class="text-muted">오늘 주문</small>
+                        </div>
+                        <div class="col-6">
+                            <h5>₩150K</h5>
+                            <small class="text-muted">오늘 매출</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <small>위치: 1층 메인홀</small>
+                        <small>활성 세션: 2</small>
+                    </div>
+                    <div class="mt-2">
+                        <div class="progress" style="height: 5px;">
+                            <div class="progress-bar bg-success" style="width: 85%"></div>
+                        </div>
+                        <small class="text-muted">CPU: 85%</small>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-sm btn-outline-primary me-1">
+                        <i class="fas fa-eye"></i> 원격 보기
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-cog"></i> 설정
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card border-success">
+                <div class="card-header bg-success text-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">키오스크 #002</h6>
+                    <span class="badge bg-light text-success">온라인</span>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h5>8</h5>
+                            <small class="text-muted">오늘 주문</small>
+                        </div>
+                        <div class="col-6">
+                            <h5>₩95K</h5>
+                            <small class="text-muted">오늘 매출</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <small>위치: 2층 푸드코트</small>
+                        <small>활성 세션: 1</small>
+                    </div>
+                    <div class="mt-2">
+                        <div class="progress" style="height: 5px;">
+                            <div class="progress-bar bg-success" style="width: 65%"></div>
+                        </div>
+                        <small class="text-muted">CPU: 65%</small>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-sm btn-outline-primary me-1">
+                        <i class="fas fa-eye"></i> 원격 보기
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-cog"></i> 설정
+                    </button>
+                </div>
+            </div>
+        </div>
+        
+        <div class="col-lg-4 col-md-6 mb-4">
+            <div class="card border-warning">
+                <div class="card-header bg-warning text-dark d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0">키오스크 #003</h6>
+                    <span class="badge bg-dark text-warning">오프라인</span>
+                </div>
+                <div class="card-body">
+                    <div class="row text-center">
+                        <div class="col-6">
+                            <h5>-</h5>
+                            <small class="text-muted">오늘 주문</small>
+                        </div>
+                        <div class="col-6">
+                            <h5>-</h5>
+                            <small class="text-muted">오늘 매출</small>
+                        </div>
+                    </div>
+                    <hr>
+                    <div class="d-flex justify-content-between">
+                        <small>위치: 3층 카페테리아</small>
+                        <small>활성 세션: 0</small>
+                    </div>
+                    <div class="mt-2">
+                        <div class="progress" style="height: 5px;">
+                            <div class="progress-bar bg-danger" style="width: 0%"></div>
+                        </div>
+                        <small class="text-muted">연결 끊김</small>
+                    </div>
+                </div>
+                <div class="card-footer">
+                    <button class="btn btn-sm btn-outline-danger me-1">
+                        <i class="fas fa-exclamation-triangle"></i> 재시작
+                    </button>
+                    <button class="btn btn-sm btn-outline-secondary">
+                        <i class="fas fa-cog"></i> 설정
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 키오스크 목록 (리스트 뷰) -->
+<div id="listViewContent" style="display: none;">
+    <div class="card">
+        <div class="card-body">
+            <div class="table-responsive">
+                <table class="table table-striped">
+                    <thead>
+                        <tr>
+                            <th>키오스크 ID</th>
+                            <th>상태</th>
+                            <th>위치</th>
+                            <th>오늘 주문</th>
+                            <th>오늘 매출</th>
+                            <th>활성 세션</th>
+                            <th>CPU 사용률</th>
+                            <th>마지막 연결</th>
+                            <th>작업</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr>
+                            <td>#001</td>
+                            <td><span class="badge bg-success">온라인</span></td>
+                            <td>1층 메인홀</td>
+                            <td>12</td>
+                            <td>₩150,000</td>
+                            <td>2</td>
+                            <td>
+                                <div class="progress" style="width: 60px; height: 10px;">
+                                    <div class="progress-bar bg-success" style="width: 85%"></div>
+                                </div>
+                                85%
+                            </td>
+                            <td>방금 전</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary me-1">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>#002</td>
+                            <td><span class="badge bg-success">온라인</span></td>
+                            <td>2층 푸드코트</td>
+                            <td>8</td>
+                            <td>₩95,000</td>
+                            <td>1</td>
+                            <td>
+                                <div class="progress" style="width: 60px; height: 10px;">
+                                    <div class="progress-bar bg-success" style="width: 65%"></div>
+                                </div>
+                                65%
+                            </td>
+                            <td>1분 전</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-primary me-1">
+                                    <i class="fas fa-eye"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>#003</td>
+                            <td><span class="badge bg-danger">오프라인</span></td>
+                            <td>3층 카페테리아</td>
+                            <td>-</td>
+                            <td>-</td>
+                            <td>0</td>
+                            <td>
+                                <div class="progress" style="width: 60px; height: 10px;">
+                                    <div class="progress-bar bg-danger" style="width: 0%"></div>
+                                </div>
+                                0%
+                            </td>
+                            <td>15분 전</td>
+                            <td>
+                                <button class="btn btn-sm btn-outline-danger me-1">
+                                    <i class="fas fa-power-off"></i>
+                                </button>
+                                <button class="btn btn-sm btn-outline-secondary">
+                                    <i class="fas fa-cog"></i>
+                                </button>
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 실시간 알림 -->
+<div class="row mt-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>실시간 알림</h5>
+            </div>
+            <div class="card-body">
+                <div id="realtimeNotifications" style="max-height: 300px; overflow-y: auto;">
+                    <div class="d-flex align-items-start mb-2">
+                        <div class="me-2">
+                            <span class="badge bg-success">정보</span>
+                        </div>
+                        <div class="flex-grow-1">
+                            <small class="text-muted">15:30:25</small>
+                            <div>키오스크 #001에서 새로운 주문이 접수되었습니다.</div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-start mb-2">
+                        <div class="me-2">
+                            <span class="badge bg-warning">경고</span>
+                        </div>
+                        <div class="flex-grow-1">
+                            <small class="text-muted">15:15:10</small>
+                            <div>키오스크 #003의 연결이 불안정합니다.</div>
+                        </div>
+                    </div>
+                    <div class="d-flex align-items-start mb-2">
+                        <div class="me-2">
+                            <span class="badge bg-danger">오류</span>
+                        </div>
+                        <div class="flex-grow-1">
+                            <small class="text-muted">15:05:42</small>
+                            <div>키오스크 #003에서 연결이 끊어졌습니다.</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 뷰 모드 전환
+document.getElementById('gridView').addEventListener('change', function() {
+    if (this.checked) {
+        document.getElementById('gridViewContent').style.display = 'block';
+        document.getElementById('listViewContent').style.display = 'none';
+    }
+});
+
+document.getElementById('listView').addEventListener('change', function() {
+    if (this.checked) {
+        document.getElementById('gridViewContent').style.display = 'none';
+        document.getElementById('listViewContent').style.display = 'block';
+    }
+});
+
+// 새로고침 버튼
+document.getElementById('refreshBtn').addEventListener('click', function() {
+    location.reload();
+});
+
+// Socket.IO 연결 (실시간 업데이트)
+const socket = io();
+
+socket.on('kioskStatusUpdate', function(data) {
+    console.log('키오스크 상태 업데이트:', data);
+    // 키오스크 상태 업데이트 로직
+});
+
+socket.on('newNotification', function(notification) {
+    const notificationsContainer = document.getElementById('realtimeNotifications');
+    const notificationElement = document.createElement('div');
+    notificationElement.className = 'd-flex align-items-start mb-2';
+    
+    const badgeClass = notification.type === 'info' ? 'bg-success' : 
+                     notification.type === 'warning' ? 'bg-warning' : 'bg-danger';
+    
+    notificationElement.innerHTML = `
+        <div class="me-2">
+            <span class="badge ${badgeClass}">${notification.type}</span>
+        </div>
+        <div class="flex-grow-1">
+            <small class="text-muted">${new Date().toLocaleTimeString()}</small>
+            <div>${notification.message}</div>
+        </div>
+    `;
+    
+    notificationsContainer.insertBefore(notificationElement, notificationsContainer.firstChild);
+    
+    // 최대 20개 알림만 유지
+    const notifications = notificationsContainer.children;
+    if (notifications.length > 20) {
+        notificationsContainer.removeChild(notifications[notifications.length - 1]);
+    }
+});
+</script>

@@ -1,0 +1,243 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>통계 및 리포트</h2>
+    <div class="btn-group" role="group">
+        <button type="button" class="btn btn-outline-primary active">일별</button>
+        <button type="button" class="btn btn-outline-primary">주별</button>
+        <button type="button" class="btn btn-outline-primary">월별</button>
+    </div>
+</div>
+
+<!-- 주요 지표 카드 -->
+<div class="row mb-4">
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-primary text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">오늘 매출</h6>
+                        <h3>₩150,000</h3>
+                        <small>+15% 전일 대비</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-won-sign fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-success text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">주문 수</h6>
+                        <h3>42</h3>
+                        <small>+8% 전일 대비</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-shopping-cart fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-info text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">평균 주문 금액</h6>
+                        <h3>₩12,500</h3>
+                        <small>+3% 전일 대비</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-calculator fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-3 col-md-6 mb-3">
+        <div class="card bg-warning text-white">
+            <div class="card-body">
+                <div class="d-flex justify-content-between">
+                    <div>
+                        <h6 class="card-title">고객 수</h6>
+                        <h3>38</h3>
+                        <small>+12% 전일 대비</small>
+                    </div>
+                    <div class="align-self-center">
+                        <i class="fas fa-users fa-2x opacity-75"></i>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 차트 섹션 -->
+<div class="row mb-4">
+    <div class="col-lg-8">
+        <div class="card">
+            <div class="card-header">
+                <h5>매출 추이 (최근 7일)</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="salesChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+    
+    <div class="col-lg-4">
+        <div class="card">
+            <div class="card-header">
+                <h5>인기 메뉴 순위</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="popularMenuChart" width="400" height="200"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 시간대별 주문 패턴 -->
+<div class="row mb-4">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5>시간대별 주문 패턴</h5>
+            </div>
+            <div class="card-body">
+                <canvas id="hourlyOrderChart" width="400" height="150"></canvas>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 상세 리포트 테이블 -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5>상세 매출 리포트</h5>
+                <button class="btn btn-sm btn-success">
+                    <i class="fas fa-download"></i> Excel 다운로드
+                </button>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>날짜</th>
+                                <th>주문 수</th>
+                                <th>총 매출</th>
+                                <th>평균 주문 금액</th>
+                                <th>취소 수</th>
+                                <th>취소율</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <tr>
+                                <td>2024-06-24</td>
+                                <td>42</td>
+                                <td>₩525,000</td>
+                                <td>₩12,500</td>
+                                <td>2</td>
+                                <td>4.8%</td>
+                            </tr>
+                            <tr>
+                                <td>2024-06-23</td>
+                                <td>38</td>
+                                <td>₩475,000</td>
+                                <td>₩12,500</td>
+                                <td>1</td>
+                                <td>2.6%</td>
+                            </tr>
+                            <tr>
+                                <td>2024-06-22</td>
+                                <td>45</td>
+                                <td>₩562,500</td>
+                                <td>₩12,500</td>
+                                <td>3</td>
+                                <td>6.7%</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 매출 추이 차트
+const salesCtx = document.getElementById('salesChart').getContext('2d');
+new Chart(salesCtx, {
+    type: 'line',
+    data: {
+        labels: ['06-18', '06-19', '06-20', '06-21', '06-22', '06-23', '06-24'],
+        datasets: [{
+            label: '매출 (원)',
+            data: [125000, 140000, 135000, 160000, 155000, 170000, 150000],
+            borderColor: 'rgb(75, 192, 192)',
+            tension: 0.1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+
+// 인기 메뉴 차트
+const menuCtx = document.getElementById('popularMenuChart').getContext('2d');
+new Chart(menuCtx, {
+    type: 'doughnut',
+    data: {
+        labels: ['불고기버거', '치킨버거', '새우버거', '감자튀김', '콜라'],
+        datasets: [{
+            data: [15, 12, 8, 20, 25],
+            backgroundColor: [
+                '#FF6384',
+                '#36A2EB',
+                '#FFCE56',
+                '#4BC0C0',
+                '#9966FF'
+            ]
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false
+    }
+});
+
+// 시간대별 주문 패턴 차트
+const hourlyCtx = document.getElementById('hourlyOrderChart').getContext('2d');
+new Chart(hourlyCtx, {
+    type: 'bar',
+    data: {
+        labels: ['09:00', '10:00', '11:00', '12:00', '13:00', '14:00', '15:00', '16:00', '17:00', '18:00', '19:00', '20:00'],
+        datasets: [{
+            label: '주문 수',
+            data: [2, 5, 8, 15, 12, 7, 6, 9, 14, 18, 16, 8],
+            backgroundColor: 'rgba(54, 162, 235, 0.5)',
+            borderColor: 'rgba(54, 162, 235, 1)',
+            borderWidth: 1
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: {
+                beginAtZero: true
+            }
+        }
+    }
+});
+</script>

@@ -1,0 +1,411 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>시스템 설정</h2>
+    <button class="btn btn-primary" id="saveAllSettings">
+        <i class="fas fa-save"></i> 모든 설정 저장
+    </button>
+</div>
+
+<div class="row">
+    <!-- 일반 설정 -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-cog"></i> 일반 설정</h5>
+            </div>
+            <div class="card-body">
+                <form id="generalSettings">
+                    <div class="mb-3">
+                        <label for="storeName" class="form-label">매장명</label>
+                        <input type="text" class="form-control" id="storeName" value="AIOSK 키오스크 매장">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="storeAddress" class="form-label">매장 주소</label>
+                        <input type="text" class="form-control" id="storeAddress" value="서울시 강남구 테헤란로 123">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="storePhone" class="form-label">매장 전화번호</label>
+                        <input type="tel" class="form-control" id="storePhone" value="02-1234-5678">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="businessHours" class="form-label">영업시간</label>
+                        <input type="text" class="form-control" id="businessHours" value="09:00 - 22:00">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="timezone" class="form-label">시간대</label>
+                        <select class="form-select" id="timezone">
+                            <option value="Asia/Seoul" selected>서울 (KST)</option>
+                            <option value="UTC">UTC</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 키오스크 설정 -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-desktop"></i> 키오스크 설정</h5>
+            </div>
+            <div class="card-body">
+                <form id="kioskSettings">
+                    <div class="mb-3">
+                        <label for="sessionTimeout" class="form-label">세션 타임아웃 (분)</label>
+                        <input type="number" class="form-control" id="sessionTimeout" value="10" min="1" max="60">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="maxCartItems" class="form-label">최대 장바구니 항목 수</label>
+                        <input type="number" class="form-control" id="maxCartItems" value="20" min="1" max="100">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="enableSound" checked>
+                            <label class="form-check-label" for="enableSound">
+                                소리 효과 활성화
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="enableHaptic" checked>
+                            <label class="form-check-label" for="enableHaptic">
+                                햅틱 피드백 활성화
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="language" class="form-label">기본 언어</label>
+                        <select class="form-select" id="language">
+                            <option value="ko" selected>한국어</option>
+                            <option value="en">English</option>
+                            <option value="ja">日本語</option>
+                        </select>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="theme" class="form-label">테마</label>
+                        <select class="form-select" id="theme">
+                            <option value="light" selected>라이트</option>
+                            <option value="dark">다크</option>
+                            <option value="auto">자동</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 결제 설정 -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-credit-card"></i> 결제 설정</h5>
+            </div>
+            <div class="card-body">
+                <form id="paymentSettings">
+                    <div class="mb-3">
+                        <label class="form-label">결제 방법</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="enableCard" checked>
+                            <label class="form-check-label" for="enableCard">
+                                신용카드/체크카드
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="enableCash" checked>
+                            <label class="form-check-label" for="enableCash">
+                                현금
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="enableMobile">
+                            <label class="form-check-label" for="enableMobile">
+                                모바일 결제
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="taxRate" class="form-label">세율 (%)</label>
+                        <input type="number" class="form-control" id="taxRate" value="10" min="0" max="30" step="0.1">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="serviceCharge" class="form-label">서비스 요금 (%)</label>
+                        <input type="number" class="form-control" id="serviceCharge" value="0" min="0" max="20" step="0.1">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="discountLimit" class="form-label">최대 할인율 (%)</label>
+                        <input type="number" class="form-control" id="discountLimit" value="50" min="0" max="100">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 주문 설정 -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-shopping-cart"></i> 주문 설정</h5>
+            </div>
+            <div class="card-body">
+                <form id="orderSettings">
+                    <div class="mb-3">
+                        <label for="orderNumberPrefix" class="form-label">주문번호 접두사</label>
+                        <input type="text" class="form-control" id="orderNumberPrefix" value="ORD" maxlength="5">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="preparationTime" class="form-label">기본 조리시간 (분)</label>
+                        <input type="number" class="form-control" id="preparationTime" value="15" min="1" max="60">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="enableOrderTracking" checked>
+                            <label class="form-check-label" for="enableOrderTracking">
+                                주문 추적 활성화
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="enableSmsNotification">
+                            <label class="form-check-label" for="enableSmsNotification">
+                                SMS 알림 활성화
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="enableEmailReceipt" checked>
+                            <label class="form-check-label" for="enableEmailReceipt">
+                                이메일 영수증 활성화
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="autoCancel" class="form-label">자동 취소 시간 (분)</label>
+                        <input type="number" class="form-control" id="autoCancel" value="30" min="10" max="120">
+                        <small class="form-text text-muted">미결제 주문 자동 취소 시간</small>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 보안 설정 -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-shield-alt"></i> 보안 설정</h5>
+            </div>
+            <div class="card-body">
+                <form id="securitySettings">
+                    <div class="mb-3">
+                        <label for="loginAttempts" class="form-label">최대 로그인 시도 횟수</label>
+                        <input type="number" class="form-control" id="loginAttempts" value="5" min="3" max="10">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="sessionDuration" class="form-label">관리자 세션 지속시간 (시간)</label>
+                        <input type="number" class="form-control" id="sessionDuration" value="8" min="1" max="24">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="enableTwoFactor">
+                            <label class="form-check-label" for="enableTwoFactor">
+                                2단계 인증 활성화
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="enableAuditLog" checked>
+                            <label class="form-check-label" for="enableAuditLog">
+                                감사 로그 활성화
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="backupInterval" class="form-label">백업 주기</label>
+                        <select class="form-select" id="backupInterval">
+                            <option value="daily" selected>매일</option>
+                            <option value="weekly">매주</option>
+                            <option value="monthly">매월</option>
+                        </select>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 알림 설정 -->
+    <div class="col-lg-6 mb-4">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-bell"></i> 알림 설정</h5>
+            </div>
+            <div class="card-body">
+                <form id="notificationSettings">
+                    <div class="mb-3">
+                        <label class="form-label">이메일 알림</label>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="emailNewOrder" checked>
+                            <label class="form-check-label" for="emailNewOrder">
+                                새 주문 알림
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="emailSystemError" checked>
+                            <label class="form-check-label" for="emailSystemError">
+                                시스템 오류 알림
+                            </label>
+                        </div>
+                        <div class="form-check">
+                            <input class="form-check-input" type="checkbox" id="emailDailyReport">
+                            <label class="form-check-label" for="emailDailyReport">
+                                일일 리포트
+                            </label>
+                        </div>
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notificationEmail" class="form-label">알림 이메일 주소</label>
+                        <input type="email" class="form-control" id="notificationEmail" value="admin@example.com">
+                    </div>
+                    
+                    <div class="mb-3">
+                        <label for="notificationPhone" class="form-label">알림 전화번호</label>
+                        <input type="tel" class="form-control" id="notificationPhone" value="010-1234-5678">
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- 시스템 정보 -->
+<div class="row">
+    <div class="col-12">
+        <div class="card">
+            <div class="card-header">
+                <h5><i class="fas fa-info-circle"></i> 시스템 정보</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4 mb-3">
+                        <strong>시스템 버전:</strong><br>
+                        AIOSK v1.0.0
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>데이터베이스:</strong><br>
+                        MySQL 8.0.33
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>서버 시간:</strong><br>
+                        <span id="serverTime"></span>
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>마지막 백업:</strong><br>
+                        2024-06-24 03:00:00
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>디스크 사용량:</strong><br>
+                        <div class="progress mt-1">
+                            <div class="progress-bar" style="width: 35%"></div>
+                        </div>
+                        3.5GB / 10GB (35%)
+                    </div>
+                    <div class="col-md-4 mb-3">
+                        <strong>메모리 사용량:</strong><br>
+                        <div class="progress mt-1">
+                            <div class="progress-bar bg-warning" style="width: 65%"></div>
+                        </div>
+                        2.6GB / 4GB (65%)
+                    </div>
+                </div>
+                
+                <hr>
+                
+                <div class="d-flex gap-2">
+                    <button class="btn btn-outline-info">
+                        <i class="fas fa-download"></i> 시스템 로그 다운로드
+                    </button>
+                    <button class="btn btn-outline-warning">
+                        <i class="fas fa-database"></i> 데이터베이스 백업
+                    </button>
+                    <button class="btn btn-outline-danger">
+                        <i class="fas fa-power-off"></i> 시스템 재시작
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// 현재 시간 업데이트
+function updateServerTime() {
+    document.getElementById('serverTime').textContent = new Date().toLocaleString('ko-KR');
+}
+updateServerTime();
+setInterval(updateServerTime, 1000);
+
+// 모든 설정 저장
+document.getElementById('saveAllSettings').addEventListener('click', function() {
+    // 각 폼의 데이터 수집
+    const settings = {
+        general: Object.fromEntries(new FormData(document.getElementById('generalSettings'))),
+        kiosk: Object.fromEntries(new FormData(document.getElementById('kioskSettings'))),
+        payment: Object.fromEntries(new FormData(document.getElementById('paymentSettings'))),
+        order: Object.fromEntries(new FormData(document.getElementById('orderSettings'))),
+        security: Object.fromEntries(new FormData(document.getElementById('securitySettings'))),
+        notification: Object.fromEntries(new FormData(document.getElementById('notificationSettings')))
+    };
+    
+    // 체크박스 값 수집
+    const checkboxes = document.querySelectorAll('input[type="checkbox"]');
+    checkboxes.forEach(checkbox => {
+        const formId = checkbox.closest('form').id;
+        const category = formId.replace('Settings', '');
+        if (!settings[category]) settings[category] = {};
+        settings[category][checkbox.id] = checkbox.checked;
+    });
+    
+    console.log('저장할 설정:', settings);
+    
+    // 여기서 실제 API 호출
+    // fetch('/api/admin/settings', { method: 'POST', body: JSON.stringify(settings) })
+    
+    // 임시 성공 메시지
+    alert('설정이 저장되었습니다.');
+});
+
+// 개별 폼 저장 이벤트
+document.querySelectorAll('form').forEach(form => {
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const formData = Object.fromEntries(new FormData(this));
+        console.log(`${this.id} 저장:`, formData);
+        alert(`${this.id} 설정이 저장되었습니다.`);
+    });
+});
+</script>

@@ -1,0 +1,115 @@
+import React from 'react';
+import { Box, Typography, Container } from '@mui/material';
+import { MenuCard } from '../ui/Card';
+import { motion } from 'framer-motion';
+import type { Menu } from '../../types';
+
+interface MenuGridProps {
+  menus: Menu[];
+  onMenuSelect: (menu: Menu) => void;
+  loading?: boolean;
+}
+
+const LoadingSkeleton: React.FC = () => (
+  <Box
+    sx={{
+      display: 'grid',
+      gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+      gap: 3,
+    }}
+  >
+    {Array.from({ length: 8 }).map((_, index) => (
+      <Box
+        key={index}
+        sx={{
+          height: 300,
+          backgroundColor: 'grey.200',
+          borderRadius: 2,
+          animation: 'pulse 1.5s ease-in-out infinite',
+          '@keyframes pulse': {
+            '0%': { opacity: 1 },
+            '50%': { opacity: 0.5 },
+            '100%': { opacity: 1 },
+          },
+        }}
+      />
+    ))}
+  </Box>
+);
+
+const EmptyState: React.FC = () => (
+  <Box
+    sx={{
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      minHeight: 300,
+      textAlign: 'center',
+    }}
+  >
+    <Typography variant="h5" color="text.secondary" gutterBottom>
+      메뉴가 없습니다
+    </Typography>
+    <Typography variant="body1" color="text.secondary">
+      다른 카테고리를 선택해보세요
+    </Typography>
+  </Box>
+);
+
+const MenuGrid: React.FC<MenuGridProps> = ({
+  menus,
+  onMenuSelect,
+  loading = false,
+}) => {
+  if (loading) {
+    return (
+      <Container maxWidth="lg">
+        <LoadingSkeleton />
+      </Container>
+    );
+  }
+
+  if (menus.length === 0) {
+    return <EmptyState />;
+  }
+
+  return (
+    <Container maxWidth="lg">
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3 }}
+      >
+        <Box
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
+            gap: 3,
+          }}
+        >
+          {menus.map((menu, index) => (
+            <motion.div
+              key={menu.id}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.3, delay: index * 0.1 }}
+            >
+              <MenuCard
+                menuId={menu.id}
+                name={menu.name}
+                description={menu.description}
+                price={menu.price}
+                imageUrl={menu.imageUrl || '/images/no-image.png'}
+                onSelect={() => onMenuSelect(menu)}
+                disabled={!menu.isAvailable}
+              />
+            </motion.div>
+          ))}
+        </Box>
+      </motion.div>
+    </Container>
+  );
+};
+
+export default MenuGrid;

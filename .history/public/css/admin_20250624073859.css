@@ -1,0 +1,297 @@
+/* AIOSK 관리자 패널 스타일 */
+
+:root {
+    --primary-color: #0d6efd;
+    --secondary-color: #6c757d;
+    --success-color: #198754;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --info-color: #0dcaf0;
+    --light-color: #f8f9fa;
+    --dark-color: #212529;
+}
+
+/* 기본 레이아웃 */
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: #f8f9fa;
+}
+
+/* 카드 스타일 */
+.card {
+    border: none;
+    border-radius: 0.5rem;
+    box-shadow: 0 0.125rem 0.25rem rgba(0, 0, 0, 0.075);
+    transition: box-shadow 0.15s ease-in-out;
+}
+
+.card:hover {
+    box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+}
+
+/* 좌측 테두리 카드 */
+.border-left-primary {
+    border-left: 0.25rem solid var(--primary-color) !important;
+}
+
+.border-left-success {
+    border-left: 0.25rem solid var(--success-color) !important;
+}
+
+.border-left-info {
+    border-left: 0.25rem solid var(--info-color) !important;
+}
+
+.border-left-warning {
+    border-left: 0.25rem solid var(--warning-color) !important;
+}
+
+/* 테이블 스타일 */
+.table-hover tbody tr:hover {
+    background-color: rgba(0, 0, 0, 0.025);
+}
+
+/* 상태 배지 스타일 */
+.badge {
+    font-size: 0.75em;
+    padding: 0.375rem 0.75rem;
+    border-radius: 0.375rem;
+}
+
+/* 버튼 스타일 */
+.btn {
+    border-radius: 0.375rem;
+    font-weight: 500;
+    transition: all 0.15s ease-in-out;
+}
+
+.btn-sm {
+    padding: 0.25rem 0.5rem;
+    font-size: 0.875rem;
+}
+
+/* 애니메이션 */
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(20px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+/* 실시간 업데이트 하이라이트 */
+.highlight-new {
+    background-color: #fff3cd !important;
+    animation: highlightFade 3s ease-out;
+}
+
+@keyframes highlightFade {
+    0% { background-color: #fff3cd; }
+    100% { background-color: transparent; }
+}
+
+/* 차트 컨테이너 */
+.chart-area {
+    position: relative;
+    height: 300px;
+}
+
+.chart-pie {
+    position: relative;
+    height: 250px;
+}
+
+/* 사이드바 스타일 개선 */
+.nav-link {
+    display: flex;
+    align-items: center;
+    font-weight: 500;
+}
+
+.nav-link i {
+    margin-right: 0.5rem;
+    width: 1.25rem;
+    text-align: center;
+}
+
+.nav-link .badge {
+    margin-left: auto;
+}
+
+/* 알림 스타일 */
+.notification-item {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    transition: background-color 0.15s ease-in-out;
+}
+
+.notification-item:hover {
+    background-color: rgba(0, 0, 0, 0.025);
+}
+
+.notification-item:last-child {
+    border-bottom: none;
+}
+
+/* 모달 스타일 */
+.modal-content {
+    border: none;
+    border-radius: 0.5rem;
+}
+
+.modal-header {
+    border-bottom: 1px solid rgba(0, 0, 0, 0.125);
+    border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.modal-footer {
+    border-top: 1px solid rgba(0, 0, 0, 0.125);
+    border-radius: 0 0 0.5rem 0.5rem;
+}
+
+/* 로딩 스피너 */
+.loading-spinner {
+    display: inline-block;
+    width: 1rem;
+    height: 1rem;
+    border: 0.125rem solid rgba(0, 0, 0, 0.1);
+    border-top: 0.125rem solid var(--primary-color);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* 반응형 스타일 */
+@media (max-width: 768px) {
+    .sidebar-sticky {
+        position: static;
+        height: auto;
+    }
+    
+    .card-body {
+        padding: 1rem;
+    }
+    
+    .btn-group-sm .btn {
+        padding: 0.125rem 0.25rem;
+        font-size: 0.75rem;
+    }
+}
+
+/* 다크 모드 지원 (추후 확장용) */
+@media (prefers-color-scheme: dark) {
+    :root {
+        --bg-color: #1a1a1a;
+        --text-color: #ffffff;
+        --card-bg: #2d2d2d;
+    }
+}
+
+/* 접근성 개선 */
+.btn:focus,
+.form-control:focus,
+.form-select:focus {
+    box-shadow: 0 0 0 0.2rem rgba(13, 110, 253, 0.25);
+}
+
+/* 인쇄 스타일 */
+@media print {
+    .sidebar-sticky,
+    .navbar,
+    .btn,
+    .modal,
+    .footer {
+        display: none !important;
+    }
+    
+    .container-fluid {
+        padding: 0;
+    }
+    
+    .card {
+        break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #dee2e6;
+    }
+}
+
+/* 사용자 정의 유틸리티 클래스 */
+.text-xs {
+    font-size: 0.75rem;
+}
+
+.font-weight-bold {
+    font-weight: 700 !important;
+}
+
+.text-gray-800 {
+    color: #5a5c69 !important;
+}
+
+.text-gray-300 {
+    color: #d1d3e2 !important;
+}
+
+.text-gray-500 {
+    color: #858796 !important;
+}
+
+/* 상태 아이콘 */
+.status-icon {
+    width: 12px;
+    height: 12px;
+    border-radius: 50%;
+    display: inline-block;
+    margin-right: 0.5rem;
+}
+
+.status-online {
+    background-color: var(--success-color);
+}
+
+.status-offline {
+    background-color: var(--danger-color);
+}
+
+.status-warning {
+    background-color: var(--warning-color);
+}
+
+/* 실시간 업데이트 표시 */
+.live-indicator {
+    position: relative;
+}
+
+.live-indicator::before {
+    content: '';
+    position: absolute;
+    top: -2px;
+    right: -2px;
+    width: 8px;
+    height: 8px;
+    background-color: var(--success-color);
+    border-radius: 50%;
+    animation: pulse 2s infinite;
+}
+
+@keyframes pulse {
+    0% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.7);
+    }
+    
+    70% {
+        transform: scale(1);
+        box-shadow: 0 0 0 10px rgba(25, 135, 84, 0);
+    }
+    
+    100% {
+        transform: scale(0.95);
+        box-shadow: 0 0 0 0 rgba(25, 135, 84, 0);
+    }
+}

@@ -1,26 +1,64 @@
 {
-  "name": "kiosk-backend",
+  "name": "aiosk-backend",
   "version": "1.0.0",
-  "description": "",
-  "main": "index.js",
+  "description": "All-In-One Smart Kiosk - Enterprise-grade backend API system for modern restaurant kiosk services",
+  "main": "src/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
     "start": "node src/server.js",
-    "dev": "nodemon src/server.js"
+    "dev": "nodemon src/server.js",
+    "test": "echo \"Automated tests coming in v1.1 - Use manual test pages for now\" && exit 0",
+    "docs": "echo \"API documentation available at http://localhost:3000/api-docs\" && npm start",
+    "setup": "echo \"Setting up AIOSK...\" && npm install && echo \"Please configure .env file and run: npm run dev\""
   },
-  "keywords": [],
-  "author": "",
+  "keywords": [
+    "kiosk",
+    "restaurant",
+    "api",
+    "backend",
+    "express",
+    "mysql",
+    "socket.io",
+    "jwt",
+    "swagger",
+    "order-management",
+    "real-time",
+    "file-upload",
+    "statistics",
+    "dashboard"
+  ],
+  "author": "AIOSK Development Team",
   "license": "ISC",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/your-username/aiosk.git"
+  },
+  "bugs": {
+    "url": "https://github.com/your-username/aiosk/issues"
+  },
+  "homepage": "https://github.com/your-username/aiosk#readme",
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
   "dependencies": {
     "bcrypt": "^6.0.0",
+    "chart.js": "^4.5.0",
+    "connect-flash": "^0.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
+    "ejs": "^3.1.10",
     "express": "^5.1.0",
+    "express-ejs-layouts": "^2.5.1",
+    "express-flash": "^0.0.2",
+    "express-session": "^1.18.1",
     "jsonwebtoken": "^9.0.2",
+    "moment": "^2.30.1",
     "morgan": "^1.10.0",
     "multer": "^2.0.1",
     "mysql2": "^3.14.1",
     "socket.io": "^4.8.1",
+    "swagger-jsdoc": "^6.2.8",
+    "swagger-ui-express": "^5.0.0",
     "winston": "^3.11.0"
   },
   "devDependencies": {
