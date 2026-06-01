@@ -8,23 +8,11 @@
             </div>
             <div class="col-md-6 text-end">
                 <small class="text-muted">
-                    <i class="bi bi-circle-fill text-success"></i>
-                    시스템 정상 운영 중
+                    <i class="bi bi-clock"></i>
+                    관리자 화면 시간
                     <span id="currentTime"></span>
                 </small>
             </div>
         </div>
     </div>
 </footer>
-
-<script>
-// 현재 시간 표시
-function updateTime() {
-    const now = new Date();
-    const timeString = now.toLocaleTimeString('ko-KR');
-    document.getElementById('currentTime').textContent = ` - ${timeString}`;
-}
-
-updateTime();
-setInterval(updateTime, 1000);
-</script>

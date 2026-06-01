@@ -5,7 +5,7 @@
     </h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group me-2">
-            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshData()">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="location.reload()">
                 <i class="bi bi-arrow-clockwise"></i>
                 새로고침
             </button>
@@ -18,17 +18,17 @@
     <div class="col-xl-3 col-md-6">
         <div class="card border-left-primary shadow h-100 py-2">
             <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
+                <div class="row align-items-center">
+                    <div class="col">
                         <div class="text-xs font-weight-bold text-primary text-uppercase mb-1">
                             오늘 매출
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="todaySales">
-                            <%= todayStatistics.totalSales ? todayStatistics.totalSales.toLocaleString() : '0' %>원
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            <%= todayStatistics.totalSales.toLocaleString() %>원
                         </div>
                     </div>
                     <div class="col-auto">
-                        <i class="bi bi-currency-dollar fa-2x text-gray-300"></i>
+                        <i class="bi bi-currency-dollar text-gray-300"></i>
                     </div>
                 </div>
             </div>
@@ -38,17 +38,17 @@
     <div class="col-xl-3 col-md-6">
         <div class="card border-left-success shadow h-100 py-2">
             <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
+                <div class="row align-items-center">
+                    <div class="col">
                         <div class="text-xs font-weight-bold text-success text-uppercase mb-1">
                             오늘 주문 수
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="todayOrders">
-                            <%= todayStatistics.orderCount || 0 %>건
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            <%= todayStatistics.orderCount.toLocaleString() %>건
                         </div>
                     </div>
                     <div class="col-auto">
-                        <i class="bi bi-receipt fa-2x text-gray-300"></i>
+                        <i class="bi bi-receipt text-gray-300"></i>
                     </div>
                 </div>
             </div>
@@ -58,17 +58,17 @@
     <div class="col-xl-3 col-md-6">
         <div class="card border-left-info shadow h-100 py-2">
             <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
+                <div class="row align-items-center">
+                    <div class="col">
                         <div class="text-xs font-weight-bold text-info text-uppercase mb-1">
                             평균 주문 금액
                         </div>
-                        <div class="h5 mb-0 font-weight-bold text-gray-800" id="avgOrderValue">
-                            <%= todayStatistics.averageOrderValue ? Math.round(todayStatistics.averageOrderValue).toLocaleString() : '0' %>원
+                        <div class="h5 mb-0 font-weight-bold text-gray-800">
+                            <%= Math.round(todayStatistics.averageOrderValue).toLocaleString() %>원
                         </div>
                     </div>
                     <div class="col-auto">
-                        <i class="bi bi-calculator fa-2x text-gray-300"></i>
+                        <i class="bi bi-calculator text-gray-300"></i>
                     </div>
                 </div>
             </div>
@@ -78,17 +78,17 @@
     <div class="col-xl-3 col-md-6">
         <div class="card border-left-warning shadow h-100 py-2">
             <div class="card-body">
-                <div class="row no-gutters align-items-center">
-                    <div class="col mr-2">
+                <div class="row align-items-center">
+                    <div class="col">
                         <div class="text-xs font-weight-bold text-warning text-uppercase mb-1">
                             대기 중 주문
                         </div>
                         <div class="h5 mb-0 font-weight-bold text-gray-800" id="pendingOrders">
-                            <%= pendingOrdersCount || 0 %>건
+                            <%= pendingOrdersCount.toLocaleString() %>건
                         </div>
                     </div>
                     <div class="col-auto">
-                        <i class="bi bi-clock fa-2x text-gray-300"></i>
+                        <i class="bi bi-clock text-gray-300"></i>
                     </div>
                 </div>
             </div>
@@ -156,21 +156,21 @@
                             </tr>
                         </thead>
                         <tbody id="recentOrdersTable">
-                            <% if (recentOrders && recentOrders.length > 0) { %>
+                            <% if (recentOrders.length > 0) { %>
                                 <% recentOrders.forEach(function(order) { %>
                                     <tr>
                                         <td>#<%= String(order.id).padStart(4, '0') %></td>
-                                        <td><%= (order.totalPrice || 0).toLocaleString() %>원</td>
+                                        <td><%= order.totalPrice.toLocaleString() %>원</td>
                                         <td>
                                             <span class="badge bg-<%= order.status === 'RECEIVED' ? 'warning' : order.status === 'PREPARING' ? 'info' : order.status === 'COMPLETED' ? 'success' : 'secondary' %>">
                                                 <%= order.status === 'RECEIVED' ? '접수' : order.status === 'PREPARING' ? '준비중' : order.status === 'COMPLETED' ? '완료' : order.status %>
                                             </span>
                                         </td>
-                                        <td><%= order.createdAt ? new Date(order.createdAt).toLocaleTimeString('ko-KR') : '-' %></td>
+                                        <td><%= new Date(order.createdAt).toLocaleTimeString('ko-KR') %></td>
                                     </tr>
                                 <% }); %>
                             <% } else { %>
-                                <tr>
+                                <tr data-empty-state="recent-orders">
                                     <td colspan="4" class="text-center text-muted">최근 주문이 없습니다.</td>
                                 </tr>
                             <% } %>
@@ -181,48 +181,40 @@
         </div>
     </div>
 
-    <!-- 시스템 상태 -->
+    <!-- 연결 상태 -->
     <div class="col-lg-6">
         <div class="card shadow mb-4">
             <div class="card-header py-3">
                 <h6 class="m-0 font-weight-bold text-primary">
                     <i class="bi bi-gear"></i>
-                    시스템 상태
+                    연결 상태
                 </h6>
             </div>
             <div class="card-body">
                 <div class="row">
                     <div class="col-6">
                         <div class="text-center">
-                            <i class="bi bi-server fa-2x text-success mb-2"></i>
-                            <div class="small text-gray-500">백엔드 서버</div>
-                            <div class="h6 text-success">정상</div>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="text-center">
-                            <i class="bi bi-database fa-2x text-success mb-2"></i>
-                            <div class="small text-gray-500">데이터베이스</div>
-                            <div class="h6 text-success">정상</div>
-                        </div>
-                    </div>
-                </div>
-                <hr>
-                <div class="row">
-                    <div class="col-6">
-                        <div class="text-center">
-                            <i class="bi bi-display fa-2x text-<%= kioskStatus === 'online' ? 'success' : 'warning' %> mb-2"></i>
-                            <div class="small text-gray-500">키오스크</div>
-                            <div class="h6 text-<%= kioskStatus === 'online' ? 'success' : 'warning' %>">
-                                <%= kioskStatus === 'online' ? '온라인' : '오프라인' %>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="col-6">
-                        <div class="text-center">
-                            <i class="bi bi-wifi fa-2x text-success mb-2"></i>
+                            <i class="bi bi-wifi text-secondary mb-2"></i>
                             <div class="small text-gray-500">실시간 연결</div>
-                            <div class="h6 text-success" id="connectionStatus">연결됨</div>
+                            <div class="h6 text-secondary" id="connectionStatus">확인 중</div>
+                        </div>
+                    </div>
+                    <div class="col-6">
+                        <div class="text-center">
+                            <i class="bi bi-display <%= kioskStatusSummary.online > 0 ? 'text-success' : kioskStatusSummary.total > 0 ? 'text-warning' : 'text-secondary' %> mb-2"></i>
+                            <div class="small text-gray-500">키오스크</div>
+                            <div class="h6 <%= kioskStatusSummary.online > 0 ? 'text-success' : kioskStatusSummary.total > 0 ? 'text-warning' : 'text-secondary' %>">
+                                온라인 <%= kioskStatusSummary.online.toLocaleString() %> / 전체 <%= kioskStatusSummary.total.toLocaleString() %>
+                            </div>
+                            <% if (kioskStatusSummary.degraded || kioskStatusSummary.maintenance || kioskStatusSummary.offline) { %>
+                                <div class="small text-muted">
+                                    주의 <%= (kioskStatusSummary.degraded + kioskStatusSummary.maintenance).toLocaleString() %> · 오프라인 <%= kioskStatusSummary.offline.toLocaleString() %>
+                                </div>
+                            <% } %>
+                            <div class="small text-muted">
+                                최근 수신:
+                                <%= kioskStatusSummary.lastSeenAt ? new Date(kioskStatusSummary.lastSeenAt).toLocaleString('ko-KR') : '-' %>
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -231,10 +223,11 @@
     </div>
 </div>
 
+<script src="/vendor/chart.js/chart.umd.js"></script>
 <script>
 // 차트 데이터 (서버에서 전달받은 데이터)
-const salesData = <%- JSON.stringify(salesChartData || []) %>;
-const popularMenuData = <%- JSON.stringify(popularMenuData || []) %>;
+const salesData = <%- JSON.stringify(salesChartData) %>;
+const popularMenuData = <%- JSON.stringify(popularMenuData) %>;
 
 // 일별 매출 차트
 const salesCtx = document.getElementById('salesChart').getContext('2d');
@@ -288,43 +281,42 @@ new Chart(menuCtx, {
     }
 });
 
-// 데이터 새로고침 함수
-function refreshData() {
-    location.reload();
+function updatePendingOrderCount(delta) {
+    const pendingElement = document.getElementById('pendingOrders');
+    const formattedCount = pendingElement.textContent.trim().replace(/\s+/g, '').replace(/건$/, '');
+    const countText = formattedCount.replace(/,/g, '');
+    const parsedCount = /^(0|[1-9][0-9]*)$/.test(countText) ? Number(countText) : null;
+    const currentCount = Number.isSafeInteger(parsedCount) && parsedCount.toLocaleString('ko-KR') === formattedCount
+        ? parsedCount
+        : 0;
+    pendingElement.textContent = Math.max(0, currentCount + delta).toLocaleString('ko-KR') + '건';
 }
 
-// Socket.IO 연결 및 실시간 업데이트
-const socket = io();
-
-socket.on('connect', function() {
-    document.getElementById('connectionStatus').textContent = '연결됨';
-    document.getElementById('connectionStatus').className = 'h6 text-success';
-});
-
-socket.on('disconnect', function() {
-    document.getElementById('connectionStatus').textContent = '연결 끊김';
-    document.getElementById('connectionStatus').className = 'h6 text-danger';
-});
-
 // 새 주문 알림
-socket.on('newOrder', function(orderData) {
+window.addEventListener('aiosk:new-order', function(event) {
+    const orderData = event.detail;
+    const orderId = String(orderData.orderId).padStart(4, '0');
+
     // 대기 중 주문 수 업데이트
-    const pendingElement = document.getElementById('pendingOrders');
-    const currentCount = parseInt(pendingElement.textContent);
-    pendingElement.textContent = (currentCount + 1) + '건';
-    
+    updatePendingOrderCount(1);
+
     // 최근 주문 테이블에 새 주문 추가
     const tableBody = document.getElementById('recentOrdersTable');
+    const emptyRow = tableBody.querySelector('[data-empty-state="recent-orders"]');
+    if (emptyRow) {
+        emptyRow.remove();
+    }
+
     const newRow = `
         <tr class="table-warning">
-            <td>#${String(orderData.id).padStart(4, '0')}</td>
-            <td>${(orderData.totalPrice || 0).toLocaleString()}원</td>
+            <td>#${orderId}</td>
+            <td>${orderData.totalPrice.toLocaleString()}원</td>
             <td><span class="badge bg-warning">접수</span></td>
             <td>${new Date().toLocaleTimeString('ko-KR')}</td>
         </tr>
     `;
     tableBody.insertAdjacentHTML('afterbegin', newRow);
-    
+
     // 최대 10개 행만 유지
     const rows = tableBody.querySelectorAll('tr');
     if (rows.length > 10) {
@@ -333,12 +325,20 @@ socket.on('newOrder', function(orderData) {
 });
 
 // 주문 상태 변경 알림
-socket.on('orderStatusChanged', function(data) {
-    // 대기 중 주문 수 업데이트 (완료된 경우)
-    if (data.status === 'COMPLETED') {
-        const pendingElement = document.getElementById('pendingOrders');
-        const currentCount = Math.max(0, parseInt(pendingElement.textContent) - 1);
-        pendingElement.textContent = currentCount + '건';
+window.addEventListener('aiosk:order-status-updated', function(event) {
+    const data = event.detail;
+
+    // 대기 중 주문 수는 RECEIVED 상태 주문만 계산한다.
+    if (data.previousStatus === 'RECEIVED' && data.status !== 'RECEIVED') {
+        updatePendingOrderCount(-1);
+    } else if (data.previousStatus !== 'RECEIVED' && data.status === 'RECEIVED') {
+        updatePendingOrderCount(1);
+    }
+});
+
+window.addEventListener('aiosk:order-cancelled', function(event) {
+    if (event.detail.previousStatus === 'RECEIVED') {
+        updatePendingOrderCount(-1);
     }
 });
 </script>

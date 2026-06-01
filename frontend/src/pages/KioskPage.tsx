@@ -1,205 +1,100 @@
-import React, { useState } from 'react';
-import { 
-  Box, 
-  Container, 
-  AppBar, 
-  Toolbar, 
-  Typography, 
+import { useEffect, useState } from 'react';
+import {
+  Box,
+  Container,
+  AppBar,
+  Toolbar,
+  Typography,
   Alert,
-  Snackbar
+  Snackbar,
+  Dialog,
+  DialogTitle,
+  DialogContent,
+  IconButton
 } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { Close as CloseIcon } from '@mui/icons-material';
+import { useMutation, useQuery } from '@tanstack/react-query';
 import { useDispatch, useSelector } from 'react-redux';
+import { motion } from 'framer-motion';
 import CategoryNav from '../components/kiosk/CategoryNav';
 import MenuGrid from '../components/kiosk/MenuGrid';
 import ShoppingCart from '../components/kiosk/ShoppingCart';
-import OrderCompletionFlow from '../components/kiosk/OrderCompletionFlow';
-import Modal from '../components/ui/Modal';
+import OrderReceipt from '../components/kiosk/OrderReceipt';
 import Button from '../components/ui/Button';
-import { useCategories, useMenus, useCreateOrder } from '../hooks/usePublicApi';
+import { publicApi } from '../services/publicApi';
 import { addItem, clearCart } from '../store/slices/cartSlice';
-import { mockNotificationService } from '../services/notificationService';
+import { MAX_ORDER_ITEM_QUANTITY } from '../constants/order';
 import { KioskSoundManager, KioskHapticManager } from '../utils/kioskFeedback';
 import { printReceipt } from '../utils/printUtils';
-import type { Menu, OrderItem, CartItem, Order } from '../types';
+import type { Category, Menu, CreateOrderItem, Order } from '../types';
 import type { RootState } from '../store';
 
-const KioskContainer = styled(Box)(({ theme }) => ({
-  minHeight: '100vh',
-  backgroundColor: theme.palette.grey[50],
-  display: 'flex',
-  flexDirection: 'column',
-}));
-
-const MainContent = styled(Container)(({ theme }) => ({
-  flexGrow: 1,
-  padding: theme.spacing(3),
-  display: 'flex',
-  gap: theme.spacing(3),
-  maxWidth: '1400px !important',
-}));
-
-const MenuSection = styled(Box)({
-  flex: 1,
-  minWidth: 0, // flex 아이템이 최소 너비를 갖지 않도록
-});
-
-const CartSection = styled(Box)({
-  width: 350,
-  flexShrink: 0,
-});
-
-const KioskPage: React.FC = () => {
+const KioskPage = () => {
   const dispatch = useDispatch();
   const cartItems = useSelector((state: RootState) => state.cart.items);
+  const cartTotalItems = cartItems.reduce((sum, item) => sum + item.quantity, 0);
   const [selectedCategoryId, setSelectedCategoryId] = useState<number | null>(null);
   const [selectedMenu, setSelectedMenu] = useState<Menu | null>(null);
   const [quantity, setQuantity] = useState(1);
-  const [orderSuccess, setOrderSuccess] = useState(false);
+  const [orderErrorOpen, setOrderErrorOpen] = useState(false);
   const [completedOrder, setCompletedOrder] = useState<Order | null>(null);
 
-  // API 훅들
-  const { data: categories = [], isLoading: categoriesLoading } = useCategories();
-  const { data: menus = [], isLoading: menusLoading } = useMenus(selectedCategoryId || undefined);
-  const createOrderMutation = useCreateOrder();
+  const {
+    data: categories = [],
+    isLoading: categoriesLoading,
+    isError: categoriesError
+  } = useQuery<Category[]>({
+    queryKey: ['categories'],
+    queryFn: publicApi.getCategories,
+    staleTime: 5 * 60 * 1000
+  });
+  const {
+    data: menus = [],
+    isLoading: menusLoading,
+    isError: menusError
+  } = useQuery<Menu[]>({
+    queryKey: ['menus', selectedCategoryId || undefined],
+    queryFn: () => publicApi.getMenus(selectedCategoryId || undefined),
+    staleTime: 2 * 60 * 1000
+  });
+  const createOrderMutation = useMutation({
+    mutationFn: (orderData: { items: CreateOrderItem[] }) => publicApi.createOrder(orderData)
+  });
+  const hasCatalogError = categoriesError || menusError;
 
-  // 카테고리 선택 핸들러
-  const handleCategorySelect = (categoryId: number | null) => {
-    setSelectedCategoryId(categoryId);
-  };
-
-  // 메뉴 선택 핸들러 (메뉴 상세 모달 열기)
-  const handleMenuSelect = (menu: Menu) => {
-    setSelectedMenu(menu);
-    setQuantity(1);
-  };
-
-  // 메뉴 장바구니 추가
-  const handleAddToCart = () => {
-    if (selectedMenu) {
-      console.log('장바구니에 메뉴 추가:', selectedMenu.name, '수량:', quantity);
-      dispatch(addItem({ menu: selectedMenu, quantity }));
-      setSelectedMenu(null);
-      setQuantity(1);
-      
-      // 성공 피드백
-      KioskSoundManager.playClickSound();
-      KioskHapticManager.triggerClick();
-      
-      console.log('장바구니 추가 완료');
-    }
-  };
-
-  // 주문하기
-  const handleCheckout = async () => {
-    // Redux 스토어에서 장바구니 아이템 가져오기
-    if (cartItems.length === 0) {
-      console.log('장바구니가 비어있습니다.');
-      return;
+  useEffect(() => {
+    const storageKey = 'aiosk:kiosk-id';
+    const existingId = window.localStorage.getItem(storageKey);
+    const kioskId = existingId || `kiosk-${globalThis.crypto?.randomUUID?.() || `${Date.now()}-${Math.random().toString(16).slice(2)}`}`;
+    if (!existingId) {
+      window.localStorage.setItem(storageKey, kioskId);
     }
 
-    const orderItems: OrderItem[] = cartItems.map((item: CartItem) => ({
-      menuId: item.menu.id,
-      quantity: item.quantity,
-      menuName: item.menu.name,
-      pricePerItem: item.menu.price,
-      price: item.menu.price * item.quantity,
-    }));
+    const reportStatus = () => {
+      publicApi.reportKioskStatus({
+        kioskId,
+        label: 'Browser Kiosk',
+        status: hasCatalogError ? 'DEGRADED' : 'ONLINE',
+        appVersion: import.meta.env.VITE_APP_VERSION
+      }).catch(() => {
+        // Heartbeat is best-effort; catalog errors already report DEGRADED status when reachable.
+      });
+    };
 
-    // 총 금액 계산
-    const totalPrice = cartItems.reduce((sum, item) => sum + (item.menu.price * item.quantity), 0);
-
-    console.log('주문 생성 시도:', orderItems);
-
-    try {
-      const result = await createOrderMutation.mutateAsync({ items: orderItems });
-      console.log('주문 성공:', result);
-      
-      // 주문 결과에 총 금액과 타임스탬프 추가
-      const enrichedOrder: Order = {
-        ...result,
-        totalPrice: result.totalPrice || totalPrice,
-        createdAt: result.createdAt || new Date().toISOString(),
-        items: result.items.map((item, index) => ({
-          ...item,
-          menuName: item.menuName || orderItems[index]?.menuName,
-          pricePerItem: item.pricePerItem || orderItems[index]?.pricePerItem,
-          price: item.price || orderItems[index]?.price,
-        }))
-      };
-      
-      // 장바구니 초기화
-      dispatch(clearCart());
-      
-      // 성공 피드백
-      KioskSoundManager.playOrderSuccessSound();
-      KioskHapticManager.triggerSuccess();
-      
-      // 주문 완료 플로우 시작
-      setCompletedOrder(enrichedOrder);
-      
-    } catch (error) {
-      console.error('주문 실패:', error);
-      // 오류 피드백
-      KioskSoundManager.playErrorSound();
-      KioskHapticManager.triggerError();
-      // 오류 시 알림 표시
-      setOrderSuccess(true);
-    }
-  };
-
-  // 수량 변경
-  const handleQuantityChange = (change: number) => {
-    setQuantity(Math.max(1, quantity + change));
-  };
-
-  // 주문 완료 플로우 핸들러들
-  const handleOrderComplete = () => {
-    setCompletedOrder(null);
-  };
-
-  const handlePrintReceipt = () => {
-    if (completedOrder) {
-      // 개선된 영수증 인쇄 함수 사용
-      printReceipt(completedOrder);
-      
-      // 피드백
-      KioskSoundManager.playClickSound();
-      KioskHapticManager.triggerClick();
-    } else {
-      // 브라우저 기본 인쇄 기능 (폴백)
-      window.print();
-    }
-  };
-
-  const handleSendNotification = async (contactInfo: { type: 'email' | 'sms' | 'none'; email?: string; phone?: string }) => {
-    if (!completedOrder) return;
-    
-    const orderNumber = String(completedOrder.id || completedOrder.orderId).padStart(4, '0');
-    
-    try {
-      if (contactInfo.type === 'email' && contactInfo.email) {
-        await mockNotificationService.sendEmail(
-          contactInfo.email, 
-          orderNumber, 
-          completedOrder.items
-        );
-        console.log('✅ 이메일 알림 전송 완료');
-      } else if (contactInfo.type === 'sms' && contactInfo.phone) {
-        await mockNotificationService.sendSMS(
-          contactInfo.phone, 
-          orderNumber
-        );
-        console.log('✅ SMS 알림 전송 완료');
-      }
-    } catch (error) {
-      console.error('❌ 알림 전송 실패:', error);
-      throw error; // 에러를 다시 던져서 UI에서 처리할 수 있도록
-    }
-  };
+    reportStatus();
+    const intervalId = window.setInterval(reportStatus, 60 * 1000);
+    return () => window.clearInterval(intervalId);
+  }, [hasCatalogError]);
 
   return (
-    <KioskContainer>
+    <Box
+      sx={{
+        minHeight: '100vh',
+        backgroundColor: 'grey.50',
+        display: 'flex',
+        flexDirection: 'column',
+      }}
+    >
       {/* 헤더 */}
       <AppBar position="static" elevation={2}>
         <Toolbar>
@@ -207,7 +102,7 @@ const KioskPage: React.FC = () => {
             🍽️ AIOSK 키오스크
           </Typography>
           <Typography variant="body2" sx={{ mr: 2 }}>
-            장바구니: {cartItems.length}개
+            장바구니: {cartTotalItems}개
           </Typography>
           <Typography variant="body2">
             터치하여 주문하세요
@@ -216,143 +111,237 @@ const KioskPage: React.FC = () => {
       </AppBar>
 
       {/* 메인 컨텐츠 */}
-      <MainContent>
-        <MenuSection>
+      <Container
+        sx={{
+          flexGrow: 1,
+          p: 3,
+          display: 'flex',
+          gap: 3,
+          maxWidth: '1400px !important',
+        }}
+      >
+        <Box sx={{ flex: 1, minWidth: 0 }}>
+          {hasCatalogError && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              메뉴 정보를 불러오지 못했습니다. 잠시 후 다시 시도해주세요.
+            </Alert>
+          )}
+
           {/* 카테고리 네비게이션 */}
           <CategoryNav
             categories={categories}
             selectedCategoryId={selectedCategoryId}
-            onCategorySelect={handleCategorySelect}
+            onCategorySelect={setSelectedCategoryId}
           />
 
           {/* 메뉴 그리드 */}
           <MenuGrid
             menus={menus}
-            onMenuSelect={handleMenuSelect}
+            onMenuSelect={(menu) => {
+              setSelectedMenu(menu);
+              setQuantity(1);
+            }}
             loading={menusLoading || categoriesLoading}
           />
-        </MenuSection>
+        </Box>
 
         {/* 장바구니 */}
-        <CartSection>
+        <Box sx={{ width: 350, flexShrink: 0 }}>
           <ShoppingCart
-            onCheckout={handleCheckout}
+            onCheckout={async () => {
+              const orderItems: CreateOrderItem[] = cartItems.map((item) => ({
+                menuId: item.menu.id,
+                quantity: item.quantity
+              }));
+
+              try {
+                const result = await createOrderMutation.mutateAsync({ items: orderItems });
+
+                dispatch(clearCart());
+                KioskSoundManager.playOrderSuccessSound();
+                KioskHapticManager.triggerSuccess();
+                setCompletedOrder(result);
+              } catch {
+                KioskSoundManager.playErrorSound();
+                KioskHapticManager.triggerError();
+                setOrderErrorOpen(true);
+              }
+            }}
             loading={createOrderMutation.isPending}
           />
-        </CartSection>
-      </MainContent>
+        </Box>
+      </Container>
 
       {/* 메뉴 상세 모달 */}
-      <Modal
+      <Dialog
         open={!!selectedMenu}
         onClose={() => setSelectedMenu(null)}
-        title={selectedMenu?.name}
-        maxWidth="sm"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            boxShadow: 24,
+          },
+        }}
       >
         {selectedMenu && (
-          <Box>
-            <Box
-              component="img"
-              src={selectedMenu.imageUrl || '/placeholder-menu.jpg'}
-              alt={selectedMenu.name}
-              sx={{
-                width: '100%',
-                height: 250,
-                objectFit: 'cover',
-                borderRadius: 1,
-                mb: 2,
-              }}
-              onError={(e) => {
-                const target = e.target as HTMLImageElement;
-                target.src = '/placeholder-menu.jpg';
-              }}
-            />
+          <>
+            <DialogTitle sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+              {selectedMenu.name}
+              <IconButton onClick={() => setSelectedMenu(null)} size="small">
+                <CloseIcon />
+              </IconButton>
+            </DialogTitle>
+            <DialogContent>
+              <Box
+                component="img"
+                src={selectedMenu.imageUrl || '/images/no-image.svg'}
+                alt={selectedMenu.name}
+                sx={{
+                  width: '100%',
+                  height: 250,
+                  objectFit: 'cover',
+                  borderRadius: 1,
+                  mb: 2,
+                }}
+                onError={(e) => {
+                  const target = e.target as HTMLImageElement;
+                  target.src = '/images/no-image.svg';
+                }}
+              />
 
-            <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
-              {selectedMenu.description}
-            </Typography>
-
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
-              <Typography variant="h5" color="primary" fontWeight="bold">
-                {selectedMenu.price.toLocaleString()}원
+              <Typography variant="body1" color="text.secondary" sx={{ mb: 3 }}>
+                {selectedMenu.description}
               </Typography>
 
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                <Button
-                  variant="outlined"
-                  onClick={() => handleQuantityChange(-1)}
-                  disabled={quantity <= 1}
-                  sx={{ minWidth: 40 }}
-                >
-                  -
-                </Button>
-                <Typography variant="h6" sx={{ minWidth: 40, textAlign: 'center' }}>
-                  {quantity}
+              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 3 }}>
+                <Typography variant="h5" color="primary" fontWeight="bold">
+                  {selectedMenu.price.toLocaleString()}원
                 </Typography>
+
+                <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
+                  <Button
+                    variant="outlined"
+                    onClick={() => setQuantity((currentQuantity) => Math.max(1, currentQuantity - 1))}
+                    disabled={quantity <= 1}
+                    sx={{ minWidth: 40 }}
+                  >
+                    -
+                  </Button>
+                  <Typography variant="h6" sx={{ minWidth: 40, textAlign: 'center' }}>
+                    {quantity}
+                  </Typography>
+                  <Button
+                    variant="outlined"
+                    onClick={() => setQuantity((currentQuantity) => Math.min(MAX_ORDER_ITEM_QUANTITY, currentQuantity + 1))}
+                    disabled={quantity >= MAX_ORDER_ITEM_QUANTITY}
+                    sx={{ minWidth: 40 }}
+                  >
+                    +
+                  </Button>
+                </Box>
+              </Box>
+
+              <Box sx={{ display: 'flex', gap: 2 }}>
                 <Button
                   variant="outlined"
-                  onClick={() => handleQuantityChange(1)}
-                  sx={{ minWidth: 40 }}
+                  onClick={() => setSelectedMenu(null)}
+                  fullWidth
                 >
-                  +
+                  취소
+                </Button>
+                <Button
+                  variant="contained"
+                  onClick={() => {
+                    dispatch(addItem({ menu: selectedMenu, quantity }));
+                    setSelectedMenu(null);
+                    setQuantity(1);
+                    KioskSoundManager.playClickSound();
+                    KioskHapticManager.triggerClick();
+                  }}
+                  fullWidth
+                  isKiosk
+                >
+                  {(selectedMenu.price * quantity).toLocaleString()}원 담기
                 </Button>
               </Box>
-            </Box>
-
-            <Box sx={{ display: 'flex', gap: 2 }}>
-              <Button
-                variant="outlined"
-                onClick={() => setSelectedMenu(null)}
-                fullWidth
-              >
-                취소
-              </Button>
-              <Button
-                variant="contained"
-                onClick={handleAddToCart}
-                fullWidth
-                isKiosk
-              >
-                {(selectedMenu.price * quantity).toLocaleString()}원 담기
-              </Button>
-            </Box>
-          </Box>
+            </DialogContent>
+          </>
         )}
-      </Modal>
+      </Dialog>
 
       {/* 주문 완료 플로우 */}
-      <Modal
+      <Dialog
         open={!!completedOrder}
-        onClose={handleOrderComplete}
-        title=""
+        onClose={() => setCompletedOrder(null)}
         maxWidth="lg"
+        fullWidth
+        PaperProps={{
+          sx: {
+            borderRadius: 2,
+            boxShadow: 24,
+          },
+        }}
       >
-        {completedOrder && (
-          <OrderCompletionFlow
-            order={completedOrder}
-            onClose={handleOrderComplete}
-            onPrintReceipt={handlePrintReceipt}
-            onSendNotification={handleSendNotification}
-          />
-        )}
-      </Modal>
+        <DialogContent>
+          {completedOrder && (
+            <Box sx={{ maxWidth: 800, mx: 'auto', p: 3 }}>
+              <motion.div
+                initial={{ opacity: 0, scale: 0.96 }}
+                animate={{ opacity: 1, scale: 1 }}
+                transition={{ duration: 0.3 }}
+              >
+                <Box sx={{ textAlign: 'center', mb: 3 }}>
+                  <Typography variant="h4" fontWeight="bold" color="primary" sx={{ mb: 1 }}>
+                    주문이 완료되었습니다
+                  </Typography>
+                  <Typography variant="body1" color="text.secondary">
+                    주문번호와 영수증을 확인해 주세요.
+                  </Typography>
+                </Box>
 
-      {/* 주문 완료 알림 (오류 시에만 사용) */}
+                <OrderReceipt
+                  order={completedOrder}
+                  onPrint={() => {
+                    printReceipt(completedOrder);
+                    KioskSoundManager.playClickSound();
+                    KioskHapticManager.triggerClick();
+                  }}
+                />
+
+                <Box sx={{ display: 'flex', justifyContent: 'center', mt: 4 }}>
+                  <Button
+                    variant="contained"
+                    onClick={() => setCompletedOrder(null)}
+                    size="large"
+                    isKiosk
+                    sx={{ minWidth: 200 }}
+                  >
+                    새 주문하기
+                  </Button>
+                </Box>
+              </motion.div>
+            </Box>
+          )}
+        </DialogContent>
+      </Dialog>
+
+      {/* 주문 오류 알림 */}
       <Snackbar
-        open={orderSuccess}
+        open={orderErrorOpen}
         autoHideDuration={5000}
-        onClose={() => setOrderSuccess(false)}
+        onClose={() => setOrderErrorOpen(false)}
         anchorOrigin={{ vertical: 'top', horizontal: 'center' }}
       >
-        <Alert 
-          onClose={() => setOrderSuccess(false)} 
-          severity="error" 
+        <Alert
+          onClose={() => setOrderErrorOpen(false)}
+          severity="error"
           sx={{ width: '100%' }}
         >
           주문 처리 중 오류가 발생했습니다. 다시 시도해주세요.
         </Alert>
       </Snackbar>
-    </KioskContainer>
+    </Box>
   );
 };
 

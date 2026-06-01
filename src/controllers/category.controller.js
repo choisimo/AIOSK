@@ -1,49 +1,88 @@
 // src/controllers/category.controller.js
 const Category = require("../models/category.model.js");
+const logger = require("../utils/logger.js");
+
+const parsePositiveInteger = (value) => {
+  const text = typeof value === 'number'
+    ? String(value)
+    : (typeof value === 'string' ? value.trim() : '');
+  const parsed = /^[1-9][0-9]*$/.test(text) ? Number(text) : null;
+  return Number.isSafeInteger(parsed) ? parsed : null;
+};
+
+const parseNonNegativeInteger = (value) => {
+  if (value === undefined || value === '') return 0;
+  const text = typeof value === 'number'
+    ? String(value)
+    : (typeof value === 'string' ? value.trim() : '');
+  const parsed = /^(0|[1-9][0-9]*)$/.test(text) ? Number(text) : null;
+  return Number.isSafeInteger(parsed) ? parsed : null;
+};
+
+const normalizeRequiredText = (value) => {
+  if (typeof value !== 'string') return null;
+  const text = value.trim();
+  return text || null;
+};
 
 // Create and Save a new Category
 exports.create = async (req, res) => {
   // Validate request
-  if (!req.body.name) {
+  const name = normalizeRequiredText(req.body.name);
+  if (!name) {
     return res.status(400).send({
       message: "Category name can not be empty!"
     });
   }
 
-  // Create a Category
-  const category = new Category({
-    name: req.body.name,
-    sort_order: req.body.sort_order
-  });
+  const sortOrder = parseNonNegativeInteger(req.body.sort_order);
+  if (sortOrder === null) {
+    return res.status(400).send({ message: "sort_order must be a non-negative integer." });
+  }
+
+  const category = {
+    name,
+    sort_order: sortOrder
+  };
 
   // Save Category in the database
   try {
     const data = await Category.create(category);
     res.status(201).send(data);
   } catch (err) {
+    logger.logError(err, req, { context: 'Admin category create' });
     res.status(500).send({
-      message: err.message || "Some error occurred while creating the Category."
+      message: "Some error occurred while creating the Category."
     });
   }
 };
 
 // Retrieve all Categories from the database.
 exports.findAll = async (req, res) => {
-  const name = req.query.name; // For filtering by name, if provided
+  const name = req.query.name === undefined || req.query.name === ''
+    ? undefined
+    : normalizeRequiredText(req.query.name);
+  if (req.query.name !== undefined && req.query.name !== '' && !name) {
+    return res.status(400).send({ message: "Invalid category name filter." });
+  }
 
   try {
     const data = await Category.getAll(name);
     res.send(data);
   } catch (err) {
+    logger.logError(err, req, { context: 'Admin category list' });
     res.status(500).send({
-      message: err.message || "Some error occurred while retrieving categories."
+      message: "Some error occurred while retrieving categories."
     });
   }
 };
 
 // Find a single Category with an id
 exports.findOne = async (req, res) => {
-  const id = req.params.id;
+  const id = parsePositiveInteger(req.params.id);
+  if (id === null) {
+    return res.status(400).send({ message: "Invalid Category ID format." });
+  }
 
   try {
     const data = await Category.findById(id);
@@ -55,22 +94,19 @@ exports.findOne = async (req, res) => {
       });
     }
   } catch (err) {
-    // Differentiate between not found and other server errors if model throws specific error kinds
-    if (err.kind === "not_found") {
-         res.status(404).send({
-             message: `Not found Category with id ${id}.`
-         });
-    } else {
-         res.status(500).send({
-             message: "Error retrieving Category with id " + id
-         });
-    }
+    logger.logError(err, req, { context: 'Admin category detail' });
+    res.status(500).send({
+      message: "Error retrieving Category with id " + id
+    });
   }
 };
 
 // Update a Category identified by the id in the request
 exports.update = async (req, res) => {
-  const id = req.params.id;
+  const id = parsePositiveInteger(req.params.id);
+  if (id === null) {
+    return res.status(400).send({ message: "Invalid Category ID format." });
+  }
 
   if (!req.body || Object.keys(req.body).length === 0) {
     return res.status(400).send({
@@ -82,18 +118,20 @@ exports.update = async (req, res) => {
   // Only include fields that are actually present in the request body
   const categoryDataToUpdate = {};
   if (req.body.name !== undefined) {
-    categoryDataToUpdate.name = req.body.name;
+    const name = normalizeRequiredText(req.body.name);
+    if (!name) {
+      return res.status(400).send({ message: "Category name cannot be empty if provided for update." });
+    }
+    categoryDataToUpdate.name = name;
   }
   if (req.body.sort_order !== undefined) {
-    categoryDataToUpdate.sort_order = req.body.sort_order;
+    const sortOrder = parseNonNegativeInteger(req.body.sort_order);
+    if (sortOrder === null) {
+      return res.status(400).send({ message: "sort_order must be a non-negative integer." });
+    }
+    categoryDataToUpdate.sort_order = sortOrder;
   }
   
-  // Prevent updating with an empty name if name is provided
-  if (req.body.name === "") {
-    return res.status(400).send({ message: "Category name cannot be empty if provided for update." });
-  }
-
-
   try {
     const data = await Category.updateById(id, categoryDataToUpdate);
     if (data) {
@@ -109,53 +147,33 @@ exports.update = async (req, res) => {
       });
     }
   } catch (err) {
-     if (err.kind === "not_found") {
-         res.status(404).send({
-             message: `Not found Category with id ${id}.`
-         });
-     } else {
-         res.status(500).send({
-             message: "Error updating Category with id " + id
-         });
-     }
+    logger.logError(err, req, { context: 'Admin category update' });
+    res.status(500).send({
+      message: "Error updating Category with id " + id
+    });
   }
 };
 
 // Delete a Category with the specified id in the request
 exports.delete = async (req, res) => {
-  const id = req.params.id;
+  const id = parsePositiveInteger(req.params.id);
+  if (id === null) {
+    return res.status(400).send({ message: "Invalid Category ID format." });
+  }
 
   try {
     const data = await Category.remove(id);
     if (data) {
       res.send({ message: "Category was deleted successfully!" });
     } else {
-      // This case might be handled if Category.remove returns null for not_found
       res.status(404).send({
         message: `Cannot delete Category with id=${id}. Maybe Category was not found!`
       });
     }
   } catch (err) {
-    if (err.kind === "not_found") {
-         res.status(404).send({
-             message: `Not found Category with id ${id}.`
-         });
-    } else {
-         res.status(500).send({
-             message: "Could not delete Category with id " + id
-         });
-    }
-  }
-};
-
-// Delete all Categories from the database. (Use with caution)
-exports.deleteAll = async (req, res) => {
-  try {
-    const data = await Category.removeAll();
-    res.send({ message: `${data.message || 'All Categories were deleted successfully!'}` });
-  } catch (err) {
+    logger.logError(err, req, { context: 'Admin category delete' });
     res.status(500).send({
-      message: err.message || "Some error occurred while removing all categories."
+      message: "Could not delete Category with id " + id
     });
   }
 };

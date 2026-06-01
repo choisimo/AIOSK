@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="64" height="64" viewBox="0 0 64 64" role="img" aria-labelledby="title">
+  <title id="title">AIOSK</title>
+  <rect width="64" height="64" rx="14" fill="#1d4ed8"/>
+  <path d="M18 18h28v8H18v-8zm0 14h28v14H18V32z" fill="#ffffff"/>
+  <circle cx="26" cy="39" r="3" fill="#1d4ed8"/>
+  <circle cx="38" cy="39" r="3" fill="#1d4ed8"/>
+</svg>

@@ -1,339 +1,224 @@
-# 🚀 AIOSK API 완전 테스트 가이드
+# AIOSK API 테스트 가이드
 
-> **📖 새로운 기능**: Swagger UI를 통한 시각적 API 테스트가 추가되었습니다!  
-> **🔗 바로 가기**: [http://localhost:3000/api-docs](http://localhost:3000/api-docs)
+> 업데이트: 2026-05-30
+> 기준: `src/server.js`, `src/routes/**/*.js`, `src/controllers/**/*.js`
 
-## 🎯 테스트 방법 개요
-
-```mermaid
-graph TD
-    A[API 테스트 시작] --> B{테스트 방법 선택}
-    B -->|시각적/편리함| C[Swagger UI 사용]
-    B -->|프로그래밍| D[curl/Postman 사용]
-    B -->|자동화| E[테스트 스크립트 사용]
-    
-    C --> F[브라우저에서 직접 테스트]
-    D --> G[명령줄 도구 사용]
-    E --> H[CI/CD 통합]
-    
-    F --> I[결과 확인]
-    G --> I
-    H --> I
-    
-    style C fill:#4CAF50
-    style D fill:#2196F3  
-    style E fill:#FF9800
-```
-
----
-
-## 📖 1. Swagger UI 테스트 (권장)
-
-### 🌐 접속 방법
-1. **브라우저에서 접속**: [http://localhost:3000/api-docs](http://localhost:3000/api-docs)
-2. **문서 랜딩 페이지**: `api_documentation_index.html` 파일 열기
-
-### 🔐 인증이 필요한 API 테스트 순서
-
-```mermaid
-sequenceDiagram
-    participant U as 사용자
-    participant S as Swagger UI
-    participant A as API 서버
-    
-    U->>S: 1. /api/admin/login 선택
-    U->>S: 2. username/password 입력
-    S->>A: POST /api/admin/login
-    A-->>S: JWT 토큰 응답
-    U->>S: 3. 'Authorize' 버튼 클릭
-    U->>S: 4. "Bearer {토큰}" 입력
-    S->>S: 5. 인증 정보 저장
-    U->>S: 6. 다른 API 테스트
-    S->>A: 자동으로 토큰 포함하여 요청
-    A-->>S: 인증된 응답
-```
-
-### 🔧 Swagger에서 테스트 가능한 기능
-
-#### 🔓 공개 API (인증 불필요)
-- ✅ 카테고리 목록 조회
-- ✅ 메뉴 목록 조회 (카테고리별 필터링)
-- ✅ 주문 생성
-
-#### 🔐 관리자 API (JWT 토큰 필요)
-- ✅ 로그인/인증
-- ✅ 카테고리 관리 (CRUD)
-- ✅ 메뉴 관리 (CRUD)
-- ✅ 주문 관리 및 상태 변경
-- ✅ 파일 업로드 (메뉴 이미지)
-- ✅ 통계 및 리포트 (JSON/CSV)
-
----
-
-## 💻 2. 기존 curl/Postman 테스트 방법
-
-## 📋 구현 완료된 공개 API 엔드포인트
-
-### 1. 카테고리 목록 조회
+## 전제 조건
 
 ```bash
-# GET /api/public/categories
-curl -X GET http://localhost:3000/api/public/categories
+cp .env.example .env
+mysql -u <user> -p -e "CREATE DATABASE IF NOT EXISTS kiosk_db CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci;"
+CONFIRM_SCHEMA_APPLY=kiosk_db npm run db:apply-schema
+ADMIN_USERNAME=admin ADMIN_PASSWORD='<strong-password>' npm run admin:create
+npm run dev
 ```
 
-**예상 응답:**
+`db:apply-schema`는 database를 생성하지 않으므로 `DB_NAME`에 해당하는 database를 먼저 만든다.
+`DB_NAME`이 `kiosk_db`가 아니면 생성할 database 이름과 `CONFIRM_SCHEMA_APPLY` 값을 실제 DB 이름에 맞춘다.
+서버 기본 URL은 `http://localhost:3000`이다. 다른 포트로 실행했다면 아래 예시의 포트도 함께 바꾼다.
 
-```json
-[
-  {
-    "categoryId": 1,
-    "name": "커피",
-    "sortOrder": 1
-  },
-  {
-    "categoryId": 2,
-    "name": "음료",
-    "sortOrder": 2
-  }
-]
-```
+## Swagger
 
-### 2. 메뉴 목록 조회
+- UI: `http://localhost:3000/api-docs`
+- OpenAPI JSON: `http://localhost:3000/api-docs.json`
+
+## System
 
 ```bash
-# 전체 메뉴 조회 (FOR_SALE 상태만)
-curl -X GET http://localhost:3000/api/public/menus
-
-# 특정 카테고리 메뉴 조회
-curl -X GET "http://localhost:3000/api/public/menus?categoryId=1"
+curl http://localhost:3000/api
+curl http://localhost:3000/healthz
+curl http://localhost:3000/readyz
+curl http://localhost:3000/metrics
 ```
 
-**예상 응답:**
+`/api`는 서비스명, 버전, 상태, 문서/헬스 체크 링크를 반환하는 API index다.
+`/healthz`는 프로세스 liveness만 확인한다. `/readyz`는 DB `SELECT 1`을 실행하며 DB 연결 실패나 timeout이면 503을 반환한다.
+`/metrics`는 Prometheus text format을 반환한다. `METRICS_TOKEN`이 설정된 서버에서는 `x-metrics-token` 또는 `Authorization: Bearer <token>`이 필요하다.
 
-```json
-[
-  {
-    "menuId": 101,
-    "name": "아메리카노",
-    "description": "진한 에스프레소와 물의 조화",
-    "price": 4500,
-    "imageUrl": "/uploads/menus/menu-101-1686823200000.jpg",
-    "status": "FOR_SALE",
-    "categoryId": 1
-  }
-]
-```
+## 공개 API
 
-### 3. 주문 생성
+### 카테고리 조회
 
 ```bash
-# POST /api/public/orders
+curl http://localhost:3000/api/public/categories
+```
+
+### 메뉴 조회
+
+```bash
+curl http://localhost:3000/api/public/menus
+curl "http://localhost:3000/api/public/menus?categoryId=1"
+```
+
+### 주문 생성
+
+공개 주문 생성 요청은 `items` 1-100개를 받으며 각 항목은 `menuId` 1 이상 정수와 `quantity` 1-99 정수만 허용한다. 서버는 현재 메뉴 가격을 조회해 주문 금액을 계산한다.
+
+```bash
 curl -X POST http://localhost:3000/api/public/orders \
   -H "Content-Type: application/json" \
-  -d '{
-    "items": [
-      { "menuId": 101, "quantity": 2 },
-      { "menuId": 102, "quantity": 1 }
-    ]
-  }'
+  -d '{"items":[{"menuId":1,"quantity":2}]}'
 ```
 
-**예상 응답:**
+### 키오스크 상태 보고
 
-```json
-{
-  "orderId": 1,
-  "totalPrice": 13500,
-  "status": "RECEIVED",
-  "createdAt": "2025-06-15T14:30:00Z",
-  "items": [
-    { "menuName": "아메리카노", "quantity": 2, "price": 9000 },
-    { "menuName": "카페라떼", "quantity": 1, "price": 4500 }
-  ]
-}
-```
-
----
-
-## 🔧 구현 완료된 관리자 API 엔드포인트
-
-### 4. 메뉴 이미지 업로드 (🆕 NEW!)
+React 키오스크 화면은 브라우저별 `kioskId`를 `localStorage`에 저장하고 `/api/public/kiosk/status`로 60초마다 heartbeat를 보낸다. `KIOSK_STATUS_TOKEN`을 설정한 서버에서는 `x-kiosk-status-token` 또는 `Authorization: Bearer <token>`이 필요하다. React bundle은 optional `VITE_KIOSK_STATUS_TOKEN`이 설정된 경우 `x-kiosk-status-token` header를 보낸다.
 
 ```bash
-# POST /api/menus/:menuId/image (JWT 토큰 필요)
-curl -X POST http://localhost:3000/api/menus/101/image \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
-  -F "image=@/path/to/your/image.jpg"
-```
-
-**예상 응답:**
-
-```json
-{
-  "message": "이미지가 성공적으로 업로드되었습니다.",
-  "imageUrl": "/uploads/menus/menu-101-1686823200000.jpg",
-  "filename": "menu-101-1686823200000.jpg",
-  "menuId": 101
-}
-```
-
-### 5. 관리자 로그인 (JWT 토큰 발급)
-
-```bash
-# POST /api/admin/login
-curl -X POST http://localhost:3000/api/admin/login \
+curl -X POST http://localhost:3000/api/public/kiosk/status \
   -H "Content-Type: application/json" \
-  -d '{
-    "username": "admin",
-    "password": "password"
-  }'
+  -d '{"kioskId":"kiosk-01","label":"Front Counter","status":"ONLINE","appVersion":"local"}'
 ```
 
-**예상 응답:**
+## 관리자 API
 
-```json
-{
-  "message": "Login successful",
-  "data": {
-    "id": 1,
-    "username": "admin",
-    "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."
-  }
-}
-```
-
-### 6. 주문 목록 조회 (🆕 NEW!)
+### 로그인
 
 ```bash
-# GET /api/admin/orders (JWT 토큰 필요)
-curl -X GET http://localhost:3000/api/admin/orders \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
-
-# 상태별 필터링
-curl -X GET "http://localhost:3000/api/admin/orders?status=RECEIVED" \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+TOKEN=$(curl -s -X POST http://localhost:3000/api/admin/login \
+  -H "Content-Type: application/json" \
+  -d '{"username":"admin","password":"<ADMIN_PASSWORD>"}' \
+  | node -pe "JSON.parse(require('fs').readFileSync(0, 'utf8')).data.token")
 ```
 
-**예상 응답:**
-
-```json
-{
-  "success": true,
-  "count": 3,
-  "data": [
-    {
-      "id": 1,
-      "total_price": "13500.00",
-      "status": "RECEIVED",
-      "created_at": "2025-06-15T14:30:00Z",
-      "updated_at": "2025-06-15T14:30:00Z",
-      "items": [
-        {
-          "menuId": 101,
-          "menuName": "아메리카노",
-          "quantity": 2,
-          "pricePerItem": "4500.00"
-        }
-      ]
-    }
-  ]
-}
-```
-
-### 7. 주문 상태 변경 (🆕 NEW!)
+### 주문 조회 및 상태 변경
 
 ```bash
-# PATCH /api/admin/orders/:orderId/status (JWT 토큰 필요)
+curl http://localhost:3000/api/admin/orders \
+  -H "Authorization: Bearer $TOKEN"
+
 curl -X PATCH http://localhost:3000/api/admin/orders/1/status \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN" \
+  -H "Authorization: Bearer $TOKEN" \
   -H "Content-Type: application/json" \
-  -d '{"status": "PREPARING"}'
+  -d '{"status":"PREPARING"}'
+
+curl -X PATCH http://localhost:3000/api/admin/orders/1/cancel \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
-**예상 응답:**
+상태 값은 `RECEIVED`, `PREPARING`, `COMPLETED`, `CANCELLED` 중 하나다.
 
-```json
-{
-  "success": true,
-  "message": "주문 상태가 성공적으로 변경되었습니다.",
-  "orderId": 1,
-  "previousStatus": "RECEIVED",
-  "status": "PREPARING"
-}
-```
-
-### 8. 주문 취소 (🆕 NEW!)
+### 키오스크 상태 조회
 
 ```bash
-# PATCH /api/admin/orders/:orderId/cancel (JWT 토큰 필요)
-curl -X PATCH http://localhost:3000/api/admin/orders/1/cancel \
-  -H "Authorization: Bearer YOUR_JWT_TOKEN"
+curl http://localhost:3000/api/admin/kiosks/status \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
-**예상 응답:**
+### 카테고리 관리
 
-```json
-{
-  "success": true,
-  "message": "주문이 성공적으로 취소되었습니다.",
-  "orderId": 1,
-  "status": "CANCELLED"
-}
+`CATEGORY_ID`는 실제 테스트용 카테고리 ID로 바꾼다. 삭제 예시는 연결된 메뉴가 없는 테스트 카테고리에서만 실행한다.
+
+```bash
+curl http://localhost:3000/api/categories \
+  -H "Authorization: Bearer $TOKEN"
+
+curl -X POST http://localhost:3000/api/categories \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"테스트 카테고리","sort_order":99}'
+
+CATEGORY_ID=1
+
+curl http://localhost:3000/api/categories/$CATEGORY_ID \
+  -H "Authorization: Bearer $TOKEN"
+
+curl -X PUT http://localhost:3000/api/categories/$CATEGORY_ID \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"테스트 카테고리 수정","sort_order":100}'
+
+curl -X DELETE http://localhost:3000/api/categories/$CATEGORY_ID \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
----
+### 메뉴 관리
 
-## 📊 주문 상태 관리 시스템
+`MENU_ID`와 `CATEGORY_ID`는 실제 테스트용 ID로 바꾼다. 주문에 연결된 메뉴 삭제는 DB 제약 조건이나 운영 정책에 따라 실패할 수 있으므로 새 테스트 메뉴에서만 삭제를 확인한다.
 
-### 🔄 주문 상태 흐름
+```bash
+curl "http://localhost:3000/api/menus?category_id=$CATEGORY_ID&status=FOR_SALE" \
+  -H "Authorization: Bearer $TOKEN"
 
-```
-RECEIVED → PREPARING → COMPLETED
-    ↓         ↓
-CANCELLED  CANCELLED (제한적)
-```
+curl -X POST http://localhost:3000/api/menus \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"테스트 메뉴","description":"API 테스트용","price":4500,"category_id":1,"status":"FOR_SALE"}'
 
-### 📋 주문 상태 설명
+MENU_ID=1
 
-- **RECEIVED**: 주문 접수됨 (취소 가능)
-- **PREPARING**: 조리 중 (제한적 취소 가능)
-- **COMPLETED**: 완료됨 (취소 불가)
-- **CANCELLED**: 취소됨 (최종 상태)
+curl http://localhost:3000/api/menus/$MENU_ID \
+  -H "Authorization: Bearer $TOKEN"
 
-### ⚠️ 주문 취소 규칙
+curl -X PUT http://localhost:3000/api/menus/$MENU_ID \
+  -H "Authorization: Bearer $TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{"name":"테스트 메뉴 수정","price":5000,"status":"SOLD_OUT"}'
 
-- ✅ **RECEIVED** 상태: 언제든 취소 가능
-- ⚠️ **PREPARING** 상태: 제한적 취소 가능 (관리자 판단)
-- ❌ **COMPLETED** 상태: 취소 불가
-
----
-
-## 🧪 테스트 도구
-
-### 1. 주문 관리 테스트 페이지
-
-```
-http://localhost:3000/test_order_management.html
+curl -X DELETE http://localhost:3000/api/menus/$MENU_ID \
+  -H "Authorization: Bearer $TOKEN"
 ```
 
-**기능:**
+### 통계 조회
 
-- 관리자 로그인
-- 실시간 주문 목록 조회
-- 주문 상태 변경
-- 주문 취소
-- 테스트 주문 생성
+```bash
+START_DATE=2026-05-01
+END_DATE=2026-05-30
 
-### 2. 파일 업로드 테스트 페이지
+curl "http://localhost:3000/api/admin/statistics?startDate=$START_DATE&endDate=$END_DATE" \
+  -H "Authorization: Bearer $TOKEN"
 
+curl "http://localhost:3000/api/admin/statistics/sales?startDate=$START_DATE&endDate=$END_DATE" \
+  -H "Authorization: Bearer $TOKEN"
+
+curl "http://localhost:3000/api/admin/statistics/top-menus?limit=10" \
+  -H "Authorization: Bearer $TOKEN"
+
+curl "http://localhost:3000/api/admin/statistics/daily-sales" \
+  -H "Authorization: Bearer $TOKEN"
+
+curl "http://localhost:3000/api/admin/statistics/hourly-analysis" \
+  -H "Authorization: Bearer $TOKEN"
+
+curl "http://localhost:3000/api/admin/statistics/category-analysis" \
+  -H "Authorization: Bearer $TOKEN"
+
+curl "http://localhost:3000/api/admin/statistics/report?format=json" \
+  -H "Authorization: Bearer $TOKEN"
+
+curl "http://localhost:3000/api/admin/statistics/report?format=csv" \
+  -H "Authorization: Bearer $TOKEN" \
+  -o sales-report.csv
 ```
-http://localhost:3000/test_upload.html
+
+### 메뉴 이미지 업로드
+
+```bash
+curl -X POST http://localhost:3000/api/menus/1/image \
+  -H "Authorization: Bearer $TOKEN" \
+  -F "image=@/path/to/menu-image.jpg"
 ```
 
-**기능:**
+## 관리자 화면
 
-- 관리자 로그인
-- 메뉴 이미지 업로드
-- 업로드된 이미지 미리보기
+- EJS 관리자 화면: `http://localhost:3000/admin`
+- 로그인은 `Admins` 테이블의 bcrypt 해시를 사용한다.
+- 계정이 없거나 비밀번호를 바꿔야 하면 `npm run admin:create`를 다시 실행한다.
 
----
+## 자동화 검증
+
+- 루트 `npm test`는 `scripts/verify-static.js`로 JavaScript/EJS 기본 검사와 문서/라우트/OpenAPI/운영 계약 정적 검증을 실행한다.
+- `npm run test:e2e`는 `aiosk_e2e*` 테스트 DB를 drop/recreate 한 뒤 `scripts/create-admin.js`로 관리자 계정을 만들고, 실제 Express 서버와 MySQL로 공개 주문 생성, 키오스크 상태 heartbeat, 관리자 로그인, 메뉴/카테고리 CRUD, 주문 상태 변경, 통계 조회, EJS 관리자 세션 페이지 렌더링을 검증한다.
+- `npm run test:e2e:browser`는 실제 Express 서버, Vite dev server, Playwright Chromium으로 React 키오스크 메뉴 선택, 장바구니 추가, 주문 완료, DB 저장과 EJS 관리자 로그인, 주문 상태 변경, 카테고리/메뉴 생성, DB 반영을 검증한다.
+- GitHub Actions CI는 MySQL 서비스 컨테이너에서 migration smoke, `npm run test:e2e`, `npm run test:e2e:browser`를 실행하고 Docker image build도 확인한다.
+
+```bash
+DB_HOST=127.0.0.1 DB_PORT=3306 DB_USER=root DB_PASSWORD=root DB_NAME=aiosk_e2e npm run test:e2e
+npx playwright install chromium
+DB_HOST=127.0.0.1 DB_PORT=3306 DB_USER=root DB_PASSWORD=root DB_NAME=aiosk_e2e_browser npm run test:e2e:browser
+```
+
+## 검증 한계
+
+- 루트의 오래된 HTML 테스트 페이지는 제거됐다. 서버는 `public/` 디렉터리만 정적 제공한다.
+- 브라우저 E2E는 핵심 React 주문 흐름과 EJS 관리자 주문/카탈로그 흐름을 검증한다. 메뉴 이미지 파일 업로드는 JWT 관리자 API의 `/api/menus/:menuId/image` 경로로 별도 제공되며 현재 브라우저 E2E 범위에는 포함하지 않는다.

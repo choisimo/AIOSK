@@ -1,112 +1,76 @@
 <div class="d-flex justify-content-between align-items-center mb-4">
     <h2>카테고리 관리</h2>
-    <button class="btn btn-primary" data-bs-toggle="modal" data-bs-target="#addCategoryModal">
-        <i class="fas fa-plus"></i> 카테고리 추가
-    </button>
+    <span class="badge bg-secondary"><%= categories.length %>개 카테고리</span>
 </div>
 
-<div class="row">
-    <div class="col-12">
-        <div class="card">
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-striped">
-                        <thead>
-                            <tr>
-                                <th>ID</th>
-                                <th>카테고리명</th>
-                                <th>설명</th>
-                                <th>메뉴 수</th>
-                                <th>상태</th>
-                                <th>생성일</th>
-                                <th>작업</th>
-                            </tr>
-                        </thead>
-                        <tbody>
-                            <tr>
-                                <td>1</td>
-                                <td>버거</td>
-                                <td>다양한 버거 메뉴</td>
-                                <td>8</td>
-                                <td><span class="badge bg-success">활성</span></td>
-                                <td>2024-01-15</td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary me-1">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>2</td>
-                                <td>사이드</td>
-                                <td>감자튀김, 치킨너겟 등</td>
-                                <td>6</td>
-                                <td><span class="badge bg-success">활성</span></td>
-                                <td>2024-01-15</td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary me-1">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                            <tr>
-                                <td>3</td>
-                                <td>음료</td>
-                                <td>각종 음료 및 커피</td>
-                                <td>12</td>
-                                <td><span class="badge bg-success">활성</span></td>
-                                <td>2024-01-15</td>
-                                <td>
-                                    <button class="btn btn-sm btn-outline-primary me-1">
-                                        <i class="fas fa-edit"></i>
-                                    </button>
-                                    <button class="btn btn-sm btn-outline-danger">
-                                        <i class="fas fa-trash"></i>
-                                    </button>
-                                </td>
-                            </tr>
-                        </tbody>
-                    </table>
-                </div>
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="m-0">새 카테고리</h6>
+    </div>
+    <div class="card-body">
+        <form method="post" action="/admin/categories" class="row g-3 align-items-end">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="col-md-7">
+                <label for="newCategoryName" class="form-label">카테고리명</label>
+                <input type="text" class="form-control" id="newCategoryName" name="name" required>
             </div>
-        </div>
+            <div class="col-md-3">
+                <label for="newCategorySortOrder" class="form-label">정렬 순서</label>
+                <input type="number" class="form-control" id="newCategorySortOrder" name="sortOrder" value="0">
+            </div>
+            <div class="col-md-2">
+                <button type="submit" class="btn btn-primary w-100">추가</button>
+            </div>
+        </form>
     </div>
 </div>
 
-<!-- 카테고리 추가 모달 -->
-<div class="modal fade" id="addCategoryModal" tabindex="-1">
-    <div class="modal-dialog">
-        <div class="modal-content">
-            <div class="modal-header">
-                <h5 class="modal-title">카테고리 추가</h5>
-                <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
-            </div>
-            <div class="modal-body">
-                <form>
-                    <div class="mb-3">
-                        <label for="categoryName" class="form-label">카테고리명</label>
-                        <input type="text" class="form-control" id="categoryName" required>
-                    </div>
-                    <div class="mb-3">
-                        <label for="categoryDescription" class="form-label">설명</label>
-                        <textarea class="form-control" id="categoryDescription" rows="3"></textarea>
-                    </div>
-                    <div class="mb-3">
-                        <label for="categoryOrder" class="form-label">정렬 순서</label>
-                        <input type="number" class="form-control" id="categoryOrder" value="1">
-                    </div>
-                </form>
-            </div>
-            <div class="modal-footer">
-                <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-                <button type="button" class="btn btn-primary">저장</button>
-            </div>
+<div class="card">
+    <div class="card-body">
+        <% categories.forEach(function(category) { %>
+            <form id="category-update-<%= category.id %>" method="post" action="/admin/categories/<%= category.id %>/update"><input type="hidden" name="_csrf" value="<%= csrfToken %>"></form>
+            <form id="category-delete-<%= category.id %>" method="post" action="/admin/categories/<%= category.id %>/delete" onsubmit="return confirm('이 카테고리를 삭제하시겠습니까? 연결된 메뉴의 카테고리는 비워집니다.');"><input type="hidden" name="_csrf" value="<%= csrfToken %>"></form>
+        <% }); %>
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>카테고리명</th>
+                        <th>정렬 순서</th>
+                        <th>메뉴 수</th>
+                        <th>생성일</th>
+                        <th>작업</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (categories.length > 0) { %>
+                        <% categories.forEach(function(category) { %>
+                            <tr>
+                                <td><%= category.id %></td>
+                                <td>
+                                    <input type="text" class="form-control form-control-sm" name="name" value="<%= category.name %>" form="category-update-<%= category.id %>" required>
+                                </td>
+                                <td>
+                                    <input type="number" class="form-control form-control-sm" name="sortOrder" value="<%= category.sortOrder %>" form="category-update-<%= category.id %>">
+                                </td>
+                                <td><%= category.menuCount %></td>
+                                <td><%= category.createdAt ? new Date(category.createdAt).toLocaleDateString('ko-KR') : '-' %></td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="submit" class="btn btn-outline-primary" form="category-update-<%= category.id %>">저장</button>
+                                        <button type="submit" class="btn btn-outline-danger" form="category-delete-<%= category.id %>">삭제</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="6" class="text-center text-muted py-4">등록된 카테고리가 없습니다.</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
         </div>
     </div>
 </div>

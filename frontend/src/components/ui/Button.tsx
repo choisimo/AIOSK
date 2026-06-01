@@ -1,14 +1,13 @@
-import React from 'react';
 import { Button as MuiButton, type ButtonProps as MuiButtonProps } from '@mui/material';
 import { styled } from '@mui/material/styles';
 
 interface ButtonProps extends MuiButtonProps {
-  variant?: 'contained' | 'outlined' | 'text';
-  size?: 'small' | 'medium' | 'large';
   isKiosk?: boolean; // 키오스크용 큰 버튼
 }
 
-const StyledButton = styled(MuiButton)<{ isKiosk?: boolean }>(({ theme, isKiosk }) => ({
+const Button = styled(MuiButton, {
+  shouldForwardProp: (prop) => !['as', 'isKiosk', 'ownerState', 'sx', 'theme'].includes(String(prop)),
+})<ButtonProps>(({ theme, isKiosk }) => ({
   borderRadius: theme.spacing(1),
   fontWeight: 600,
   textTransform: 'none',
@@ -36,24 +35,5 @@ const StyledButton = styled(MuiButton)<{ isKiosk?: boolean }>(({ theme, isKiosk 
     { duration: theme.transitions.duration.short }
   ),
 }));
-
-const Button: React.FC<ButtonProps> = ({ 
-  children, 
-  isKiosk = false, 
-  variant = 'contained',
-  size = 'medium',
-  ...props 
-}) => {
-  return (
-    <StyledButton 
-      variant={variant} 
-      size={size} 
-      isKiosk={isKiosk} 
-      {...props}
-    >
-      {children}
-    </StyledButton>
-  );
-};
 
 export default Button;

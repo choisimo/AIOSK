@@ -2,16 +2,6 @@
 
 /**
  * @swagger
- * components:
- *   securitySchemes:
- *     bearerAuth:
- *       type: http
- *       scheme: bearer
- *       bearerFormat: JWT
- */
-
-/**
- * @swagger
  * /api/admin/statistics:
  *   get:
  *     summary: 종합 대시보드 통계 조회
@@ -105,20 +95,43 @@
  *                 data:
  *                   type: object
  *                   properties:
- *                     period:
- *                       type: string
- *                       example: "2025-06-01 ~ 2025-06-15"
- *                     totalSales:
+ *                     total_orders:
+ *                       type: integer
+ *                       example: 125
+ *                     total_sales:
  *                       type: number
  *                       format: decimal
  *                       example: 450000.00
- *                     totalOrders:
- *                       type: integer
- *                       example: 125
- *                     averageOrderValue:
+ *                     average_order_value:
  *                       type: number
  *                       format: decimal
  *                       example: 3600.00
+ *                     completed_orders:
+ *                       type: integer
+ *                       example: 110
+ *                     cancelled_orders:
+ *                       type: integer
+ *                       example: 5
+ *                     pending_orders:
+ *                       type: integer
+ *                       example: 6
+ *                     preparing_orders:
+ *                       type: integer
+ *                       example: 4
+ *                     period:
+ *                       type: object
+ *                       properties:
+ *                         startDate:
+ *                           type: string
+ *                           nullable: true
+ *                           example: "2025-06-01"
+ *                         endDate:
+ *                           type: string
+ *                           nullable: true
+ *                           example: "2025-06-15"
+ *                     generatedAt:
+ *                       type: string
+ *                       format: date-time
  *       401:
  *         description: "인증 실패"
  *       500:
@@ -140,7 +153,7 @@
  *         schema:
  *           type: integer
  *           minimum: 1
- *           maximum: 50
+ *           maximum: 100
  *         description: "조회할 메뉴 개수 (기본값: 10)"
  *         example: 10
  *       - in: query
@@ -167,23 +180,289 @@
  *                   type: boolean
  *                   example: true
  *                 data:
- *                   type: array
- *                   items:
- *                     type: object
- *                     properties:
- *                       rank:
- *                         type: integer
- *                         example: 1
- *                       menu_name:
- *                         type: string
- *                         example: "아메리카노"
- *                       total_quantity:
- *                         type: integer
- *                         example: 45
- *                       total_sales:
- *                         type: number
- *                         format: decimal
- *                         example: 202500.00
+ *                   type: object
+ *                   properties:
+ *                     menus:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           menu_id:
+ *                             type: integer
+ *                             example: 1
+ *                           menu_name:
+ *                             type: string
+ *                             example: "아메리카노"
+ *                           category_name:
+ *                             type: string
+ *                             nullable: true
+ *                             example: "음료"
+ *                           total_quantity:
+ *                             type: integer
+ *                             example: 45
+ *                           order_count:
+ *                             type: integer
+ *                             example: 32
+ *                           total_revenue:
+ *                             type: number
+ *                             format: decimal
+ *                             example: 202500.00
+ *                           average_price:
+ *                             type: number
+ *                             format: decimal
+ *                             example: 4500.00
+ *                     count:
+ *                       type: integer
+ *                       example: 10
+ *                     period:
+ *                       type: object
+ *                       properties:
+ *                         startDate:
+ *                           type: string
+ *                           nullable: true
+ *                         endDate:
+ *                           type: string
+ *                           nullable: true
+ *                     generatedAt:
+ *                       type: string
+ *                       format: date-time
+ *       401:
+ *         description: "인증 실패"
+ *       400:
+ *         description: "잘못된 조회 개수"
+ *       500:
+ *         description: "서버 오류"
+ */
+
+/**
+ * @swagger
+ * /api/admin/statistics/daily-sales:
+ *   get:
+ *     summary: 일별 매출 현황 조회
+ *     description: "지정된 기간의 일별 매출 현황을 조회합니다."
+ *     tags: [📊 Admin - Statistics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: "조회 시작 날짜 (YYYY-MM-DD)"
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: "조회 종료 날짜 (YYYY-MM-DD)"
+ *     responses:
+ *       200:
+ *         description: "일별 매출 조회 성공"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     sales:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           sale_date:
+ *                             type: string
+ *                             format: date
+ *                             example: "2025-06-15"
+ *                           order_count:
+ *                             type: integer
+ *                             example: 12
+ *                           daily_sales:
+ *                             type: number
+ *                             format: decimal
+ *                             example: 54000.00
+ *                           completed_orders:
+ *                             type: integer
+ *                             example: 10
+ *                           cancelled_orders:
+ *                             type: integer
+ *                             example: 1
+ *                     count:
+ *                       type: integer
+ *                       example: 7
+ *                     period:
+ *                       type: object
+ *                       properties:
+ *                         startDate:
+ *                           type: string
+ *                           nullable: true
+ *                         endDate:
+ *                           type: string
+ *                           nullable: true
+ *                     generatedAt:
+ *                       type: string
+ *                       format: date-time
+ *       401:
+ *         description: "인증 실패"
+ *       500:
+ *         description: "서버 오류"
+ */
+
+/**
+ * @swagger
+ * /api/admin/statistics/hourly-analysis:
+ *   get:
+ *     summary: 시간대별 주문 분석 조회
+ *     description: "지정된 기간의 시간대별 주문과 매출을 조회합니다."
+ *     tags: [📊 Admin - Statistics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: "조회 시작 날짜 (YYYY-MM-DD)"
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: "조회 종료 날짜 (YYYY-MM-DD)"
+ *     responses:
+ *       200:
+ *         description: "시간대별 주문 분석 조회 성공"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     hourlyStats:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           order_hour:
+ *                             type: integer
+ *                             minimum: 0
+ *                             maximum: 23
+ *                             example: 12
+ *                           order_count:
+ *                             type: integer
+ *                             example: 8
+ *                           hourly_sales:
+ *                             type: number
+ *                             format: decimal
+ *                             example: 36000.00
+ *                           average_order_value:
+ *                             type: number
+ *                             format: decimal
+ *                             example: 4500.00
+ *                     period:
+ *                       type: object
+ *                       properties:
+ *                         startDate:
+ *                           type: string
+ *                           nullable: true
+ *                         endDate:
+ *                           type: string
+ *                           nullable: true
+ *                     generatedAt:
+ *                       type: string
+ *                       format: date-time
+ *       401:
+ *         description: "인증 실패"
+ *       500:
+ *         description: "서버 오류"
+ */
+
+/**
+ * @swagger
+ * /api/admin/statistics/category-analysis:
+ *   get:
+ *     summary: 카테고리별 매출 분석 조회
+ *     description: "지정된 기간의 카테고리별 매출과 주문량을 조회합니다."
+ *     tags: [📊 Admin - Statistics]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: startDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: "조회 시작 날짜 (YYYY-MM-DD)"
+ *       - in: query
+ *         name: endDate
+ *         schema:
+ *           type: string
+ *           format: date
+ *         description: "조회 종료 날짜 (YYYY-MM-DD)"
+ *     responses:
+ *       200:
+ *         description: "카테고리별 매출 분석 조회 성공"
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 success:
+ *                   type: boolean
+ *                   example: true
+ *                 data:
+ *                   type: object
+ *                   properties:
+ *                     categories:
+ *                       type: array
+ *                       items:
+ *                         type: object
+ *                         properties:
+ *                           category_id:
+ *                             type: integer
+ *                             example: 1
+ *                           category_name:
+ *                             type: string
+ *                             example: "음료"
+ *                           order_count:
+ *                             type: integer
+ *                             example: 20
+ *                           total_quantity:
+ *                             type: integer
+ *                             example: 34
+ *                           category_revenue:
+ *                             type: number
+ *                             format: decimal
+ *                             example: 153000.00
+ *                           menu_count:
+ *                             type: integer
+ *                             example: 6
+ *                     count:
+ *                       type: integer
+ *                       example: 5
+ *                     period:
+ *                       type: object
+ *                       properties:
+ *                         startDate:
+ *                           type: string
+ *                           nullable: true
+ *                         endDate:
+ *                           type: string
+ *                           nullable: true
+ *                     generatedAt:
+ *                       type: string
+ *                       format: date-time
  *       401:
  *         description: "인증 실패"
  *       500:
@@ -234,11 +513,19 @@
  *                   example: true
  *                 data:
  *                   type: object
- *                   description: "매출 리포트 데이터"
+ *                   properties:
+ *                     report:
+ *                       $ref: '#/components/schemas/Statistics'
+ *                     reportType:
+ *                       type: string
+ *                       example: "comprehensive"
+ *                     generatedAt:
+ *                       type: string
+ *                       format: date-time
  *           text/csv:
  *             schema:
  *               type: string
- *               example: "Date,Sales,Orders,Average Order Value\n2025-06-01,15000.00,5,3000.00"
+ *               example: "매출 개요\n항목,값\n총 주문 수,5\n총 매출,15000.00"
  *       401:
  *         description: "인증 실패"
  *       500:

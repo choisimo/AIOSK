@@ -22,18 +22,41 @@
  *             schema:
  *               type: array
  *               items:
- *                 $ref: '#/components/schemas/Menu'
+ *                 type: object
+ *                 properties:
+ *                   menuId:
+ *                     type: integer
+ *                     example: 1
+ *                   name:
+ *                     type: string
+ *                     example: "아메리카노"
+ *                   description:
+ *                     type: string
+ *                     nullable: true
+ *                     example: "진한 에스프레소와 뜨거운 물"
+ *                   price:
+ *                     type: number
+ *                     format: decimal
+ *                     example: 4500.00
+ *                   imageUrl:
+ *                     type: string
+ *                     nullable: true
+ *                     example: "/uploads/menus/menu-1-1700000000000.png"
+ *                   status:
+ *                     type: string
+ *                     enum: [FOR_SALE]
+ *                     example: "FOR_SALE"
+ *                   categoryId:
+ *                     type: integer
+ *                     example: 1
  *             example:
- *               - id: 1
+ *               - menuId: 1
  *                 name: "아메리카노"
  *                 description: "진한 에스프레소와 뜨거운 물"
  *                 price: 4500.00
- *                 category_id: 1
- *                 category_name: "음료"
- *                 image_url: "/uploads/menus/americano.jpg"
- *                 is_available: true
- *                 created_at: "2025-06-15T10:30:00Z"
- *                 updated_at: "2025-06-15T10:30:00Z"
+ *                 imageUrl: "/uploads/menus/menu-1-1700000000000.png"
+ *                 status: "FOR_SALE"
+ *                 categoryId: 1
  *       400:
  *         description: 잘못된 요청 (유효하지 않은 categoryId)
  *         content:
@@ -50,10 +73,8 @@
 
 module.exports = app => {
   const publicMenus = require("../../controllers/public/menu.controller.js");
-  var router = require("express").Router();
+  const router = require("express").Router();
 
-  // 공개 메뉴 목록 조회 (인증 불필요)
-  // 쿼리 파라미터: categoryId (선택사항)
   router.get("/", publicMenus.findAll);
 
   app.use('/api/public/menus', router);

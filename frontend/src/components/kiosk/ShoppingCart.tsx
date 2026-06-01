@@ -1,57 +1,42 @@
-import React from 'react';
-import { 
-  Box, 
-  Paper, 
-  Typography, 
-  List, 
-  ListItem, 
+import {
+  Box,
+  Paper,
+  Typography,
+  List,
+  ListItem,
   Divider,
   IconButton,
   Badge
 } from '@mui/material';
-import { 
-  Add as AddIcon, 
-  Remove as RemoveIcon, 
+import {
+  Add as AddIcon,
+  Remove as RemoveIcon,
   Delete as DeleteIcon,
-  ShoppingCart as CartIcon 
+  ShoppingCart as CartIcon
 } from '@mui/icons-material';
 import { useSelector, useDispatch } from 'react-redux';
 import { motion, AnimatePresence } from 'framer-motion';
 import type { RootState } from '../../store';
-import type { CartItem } from '../../types';
 import { updateQuantity, removeItem } from '../../store/slices/cartSlice';
+import { MAX_ORDER_ITEM_QUANTITY } from '../../constants/order';
 import Button from '../ui/Button';
 
 interface ShoppingCartProps {
   onCheckout: () => void;
-  loading?: boolean;
+  loading: boolean;
 }
 
-const ShoppingCart: React.FC<ShoppingCartProps> = ({ onCheckout, loading = false }) => {
+const ShoppingCart = ({ onCheckout, loading }: ShoppingCartProps) => {
   const dispatch = useDispatch();
-  const { items, totalItems, totalPrice } = useSelector((state: RootState) => state.cart);
-
-  const handleQuantityChange = (menuId: number, newQuantity: number) => {
-    dispatch(updateQuantity({ menuId, quantity: newQuantity }));
-  };
-
-  const handleRemoveItem = (menuId: number) => {
-    dispatch(removeItem(menuId));
-  };
-
-  const handleCheckoutClick = () => {
-    console.log('주문하기 버튼 클릭됨');
-    console.log('장바구니 아이템:', items);
-    console.log('총 아이템 수:', totalItems);
-    console.log('총 가격:', totalPrice);
-    onCheckout();
-  };
+  const items = useSelector((state: RootState) => state.cart.items);
+  const totalItems = items.reduce((sum, item) => sum + item.quantity, 0);
+  const totalPrice = items.reduce((sum, item) => sum + item.menu.price * item.quantity, 0);
 
   return (
-    <Paper 
-      elevation={4} 
-      sx={{ 
-        p: 3, 
+    <Paper
+      elevation={4}
+      sx={{
+        p: 3,
         height: 'fit-content',
         minHeight: 400,
         maxHeight: '80vh',
@@ -93,7 +78,7 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({ onCheckout, loading = false
         ) : (
           <List sx={{ p: 0 }}>
             <AnimatePresence>
-              {items.map((item: CartItem) => (
+              {items.map((item) => (
                 <motion.div
                   key={item.menu.id}
                   initial={{ opacity: 0, x: -20 }}
@@ -119,7 +104,7 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({ onCheckout, loading = false
                       </Typography>
                       <IconButton
                         size="small"
-                        onClick={() => handleRemoveItem(item.menu.id)}
+                        onClick={() => dispatch(removeItem(item.menu.id))}
                         sx={{ color: 'error.main' }}
                       >
                         <DeleteIcon fontSize="small" />
@@ -129,13 +114,16 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({ onCheckout, loading = false
                     {/* 가격 및 수량 조절 */}
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <Typography variant="body2" color="primary" fontWeight="bold">
-                        {item.totalPrice.toLocaleString()}원
+                        {(item.menu.price * item.quantity).toLocaleString()}원
                       </Typography>
 
                       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
                         <IconButton
                           size="small"
-                          onClick={() => handleQuantityChange(item.menu.id, item.quantity - 1)}
+                          onClick={() => dispatch(updateQuantity({
+                            menuId: item.menu.id,
+                            quantity: item.quantity - 1
+                          }))}
                           disabled={item.quantity <= 1}
                         >
                           <RemoveIcon fontSize="small" />
@@ -147,7 +135,11 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({ onCheckout, loading = false
 
                         <IconButton
                           size="small"
-                          onClick={() => handleQuantityChange(item.menu.id, item.quantity + 1)}
+                          onClick={() => dispatch(updateQuantity({
+                            menuId: item.menu.id,
+                            quantity: Math.min(MAX_ORDER_ITEM_QUANTITY, item.quantity + 1)
+                          }))}
+                          disabled={item.quantity >= MAX_ORDER_ITEM_QUANTITY}
                         >
                           <AddIcon fontSize="small" />
                         </IconButton>
@@ -165,7 +157,7 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({ onCheckout, loading = false
       {items.length > 0 && (
         <Box sx={{ mt: 2 }}>
           <Divider sx={{ mb: 2 }} />
-          
+
           <Box sx={{ display: 'flex', justifyContent: 'space-between', mb: 2 }}>
             <Typography variant="h6">
               총 {totalItems}개
@@ -176,10 +168,11 @@ const ShoppingCart: React.FC<ShoppingCartProps> = ({ onCheckout, loading = false
           </Box>
 
           <Button
+            variant="contained"
             fullWidth
             size="large"
             isKiosk
-            onClick={handleCheckoutClick}
+            onClick={onCheckout}
             disabled={loading}
             sx={{ py: 2 }}
           >

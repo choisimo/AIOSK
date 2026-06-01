@@ -4,14 +4,12 @@ const morgan = require('morgan');
 const logger = require('../utils/logger');
 
 // 커스텀 토큰 정의
-morgan.token('id', (req) => req.id);
-morgan.token('body', (req) => JSON.stringify(req.body));
-morgan.token('query', (req) => JSON.stringify(req.query));
+morgan.token('safe-url', (req) => logger.redactUrl(req.originalUrl || req.url));
 
 // 로그 포맷 정의
 const logFormat = process.env.NODE_ENV === 'production'
-  ? ':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent" :response-time ms'
-  : ':method :url :status :response-time ms - :res[content-length]';
+  ? ':remote-addr - :remote-user [:date[clf]] ":method :safe-url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent" :response-time ms'
+  : ':method :safe-url :status :response-time ms - :res[content-length]';
 
 // Morgan 미들웨어 설정
 const requestLogger = morgan(logFormat, {
@@ -49,7 +47,7 @@ const performanceLogger = (req, res, next) => {
     if (duration > 1000) {
       logger.logWarning('Slow request detected', {
         method: req.method,
-        url: req.originalUrl,
+        url: logger.redactUrl(req.originalUrl),
         duration: `${duration}ms`,
         statusCode: res.statusCode,
         requestId: req.id
@@ -60,7 +58,7 @@ const performanceLogger = (req, res, next) => {
     if (res.statusCode >= 400) {
       logger.logWarning('Error response', {
         method: req.method,
-        url: req.originalUrl,
+        url: logger.redactUrl(req.originalUrl),
         statusCode: res.statusCode,
         duration: `${duration}ms`,
         requestId: req.id,
@@ -89,9 +87,9 @@ const securityLogger = (req, res, next) => {
     if (pattern.test(url) || pattern.test(JSON.stringify(req.body))) {
       logger.logWarning('Suspicious activity detected', {
         method: req.method,
-        url: url,
-        body: req.body,
-        headers: req.headers,
+        url: logger.redactUrl(url),
+        body: logger.redactSensitiveData(req.body),
+        headers: logger.redactSensitiveData(req.headers),
         ip: req.ip,
         userAgent: req.get('User-Agent'),
         requestId: req.id

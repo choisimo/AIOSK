@@ -5,7 +5,7 @@
     </h1>
     <div class="btn-toolbar mb-2 mb-md-0">
         <div class="btn-group me-2">
-            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="refreshOrders()">
+            <button type="button" class="btn btn-sm btn-outline-secondary" onclick="location.reload()">
                 <i class="bi bi-arrow-clockwise"></i>
                 새로고침
             </button>
@@ -28,7 +28,7 @@
                         <h4 class="mb-0" id="receivedCount">0</h4>
                     </div>
                     <div class="align-self-center">
-                        <i class="bi bi-clock fa-2x"></i>
+                        <i class="bi bi-clock"></i>
                     </div>
                 </div>
             </div>
@@ -43,7 +43,7 @@
                         <h4 class="mb-0" id="preparingCount">0</h4>
                     </div>
                     <div class="align-self-center">
-                        <i class="bi bi-hourglass-split fa-2x"></i>
+                        <i class="bi bi-hourglass-split"></i>
                     </div>
                 </div>
             </div>
@@ -58,7 +58,7 @@
                         <h4 class="mb-0" id="completedCount">0</h4>
                     </div>
                     <div class="align-self-center">
-                        <i class="bi bi-check-circle fa-2x"></i>
+                        <i class="bi bi-check-circle"></i>
                     </div>
                 </div>
             </div>
@@ -73,7 +73,7 @@
                         <h4 class="mb-0" id="totalCount">0</h4>
                     </div>
                     <div class="align-self-center">
-                        <i class="bi bi-list-ul fa-2x"></i>
+                        <i class="bi bi-list-ul"></i>
                     </div>
                 </div>
             </div>
@@ -103,32 +103,28 @@
                     </tr>
                 </thead>
                 <tbody id="ordersTableBody">
-                    <% if (orders && orders.length > 0) { %>
+                    <% if (orders.length > 0) { %>
                         <% orders.forEach(function(order) { %>
                             <tr data-order-id="<%= order.id %>">
                                 <td>
                                     <strong>#<%= String(order.id).padStart(4, '0') %></strong>
                                 </td>
                                 <td>
-                                    <%= order.createdAt ? new Date(order.createdAt).toLocaleString('ko-KR') : '-' %>
+                                    <%= new Date(order.createdAt).toLocaleString('ko-KR') %>
                                 </td>
                                 <td>
-                                    <% if (order.items && order.items.length > 0) { %>
-                                        <% order.items.forEach(function(item, index) { %>
-                                            <div class="small">
-                                                • <%= item.menuName %> × <%= item.quantity %>개
-                                                <span class="text-muted">(<%= (item.price || 0).toLocaleString() %>원)</span>
-                                            </div>
-                                        <% }); %>
-                                    <% } else { %>
-                                        <span class="text-muted">주문 내역 없음</span>
-                                    <% } %>
+                                    <% order.items.forEach(function(item) { %>
+                                        <div class="small">
+                                            • <%= item.menuName %> × <%= item.quantity %>개
+                                            <span class="text-muted">(<%= item.price.toLocaleString() %>원)</span>
+                                        </div>
+                                    <% }); %>
                                 </td>
                                 <td>
-                                    <strong><%= (order.totalPrice || 0).toLocaleString() %>원</strong>
+                                    <strong><%= order.totalPrice.toLocaleString() %>원</strong>
                                 </td>
                                 <td>
-                                    <span class="badge bg-<%= order.status === 'RECEIVED' ? 'warning' : order.status === 'PREPARING' ? 'info' : order.status === 'COMPLETED' ? 'success' : 'secondary' %>" 
+                                    <span class="badge bg-<%= order.status === 'RECEIVED' ? 'warning' : order.status === 'PREPARING' ? 'info' : order.status === 'COMPLETED' ? 'success' : 'secondary' %>"
                                           id="status-<%= order.id %>">
                                         <%= order.status === 'RECEIVED' ? '접수' : order.status === 'PREPARING' ? '준비중' : order.status === 'COMPLETED' ? '완료' : order.status %>
                                     </span>
@@ -136,33 +132,33 @@
                                 <td>
                                     <div class="btn-group btn-group-sm" role="group">
                                         <% if (order.status === 'RECEIVED') { %>
-                                            <button type="button" 
-                                                    class="btn btn-outline-info" 
+                                            <button type="button"
+                                                    class="btn btn-outline-info"
                                                     onclick="updateOrderStatus(<%= order.id %>, 'PREPARING')">
                                                 <i class="bi bi-play"></i>
                                                 준비시작
                                             </button>
                                         <% } %>
-                                        
+
                                         <% if (order.status === 'PREPARING') { %>
-                                            <button type="button" 
-                                                    class="btn btn-outline-success" 
+                                            <button type="button"
+                                                    class="btn btn-outline-success"
                                                     onclick="updateOrderStatus(<%= order.id %>, 'COMPLETED')">
                                                 <i class="bi bi-check"></i>
                                                 완료
                                             </button>
                                         <% } %>
-                                        
-                                        <button type="button" 
-                                                class="btn btn-outline-primary" 
+
+                                        <button type="button"
+                                                class="btn btn-outline-primary"
                                                 onclick="viewOrderDetails(<%= order.id %>)">
                                             <i class="bi bi-eye"></i>
                                             상세
                                         </button>
-                                        
+
                                         <% if (order.status !== 'COMPLETED') { %>
-                                            <button type="button" 
-                                                    class="btn btn-outline-danger" 
+                                            <button type="button"
+                                                    class="btn btn-outline-danger"
                                                     onclick="cancelOrder(<%= order.id %>)">
                                                 <i class="bi bi-x"></i>
                                                 취소
@@ -175,7 +171,7 @@
                     <% } else { %>
                         <tr>
                             <td colspan="6" class="text-center text-muted py-4">
-                                <i class="bi bi-inbox fa-2x d-block mb-2"></i>
+                                <i class="bi bi-inbox d-block mb-2"></i>
                                 주문이 없습니다.
                             </td>
                         </tr>
@@ -199,7 +195,7 @@
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">닫기</button>
-                <button type="button" class="btn btn-primary" onclick="printOrderReceipt()">
+                <button type="button" class="btn btn-primary" onclick="window.print()">
                     <i class="bi bi-printer"></i>
                     영수증 출력
                 </button>
@@ -217,7 +213,7 @@
                 <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
             </div>
             <div class="modal-body">
-                <form id="filterForm">
+                <form id="filterForm" method="get" action="/admin/orders">
                     <div class="mb-3">
                         <label for="statusFilter" class="form-label">주문 상태</label>
                         <select class="form-select" id="statusFilter" name="status">
@@ -225,30 +221,31 @@
                             <option value="RECEIVED" <%= status === 'RECEIVED' ? 'selected' : '' %>>접수</option>
                             <option value="PREPARING" <%= status === 'PREPARING' ? 'selected' : '' %>>준비중</option>
                             <option value="COMPLETED" <%= status === 'COMPLETED' ? 'selected' : '' %>>완료</option>
-                            <option value="CANCELED" <%= status === 'CANCELED' ? 'selected' : '' %>>취소</option>
+                            <option value="CANCELLED" <%= status === 'CANCELLED' ? 'selected' : '' %>>취소</option>
                         </select>
                     </div>
                     <div class="mb-3">
                         <label for="dateFrom" class="form-label">시작 날짜</label>
-                        <input type="date" class="form-control" id="dateFrom" name="dateFrom">
+                        <input type="date" class="form-control" id="dateFrom" name="dateFrom" value="<%= dateFrom %>">
                     </div>
                     <div class="mb-3">
                         <label for="dateTo" class="form-label">종료 날짜</label>
-                        <input type="date" class="form-control" id="dateTo" name="dateTo">
+                        <input type="date" class="form-control" id="dateTo" name="dateTo" value="<%= dateTo %>">
                     </div>
                 </form>
             </div>
             <div class="modal-footer">
                 <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">취소</button>
-                <button type="button" class="btn btn-primary" onclick="applyFilter()">필터 적용</button>
+                <button type="submit" class="btn btn-primary" form="filterForm">필터 적용</button>
             </div>
         </div>
     </div>
 </div>
 
 <script>
-// Socket.IO 연결
-const socket = io();
+function getCsrfToken() {
+    return document.querySelector('meta[name="csrf-token"]').getAttribute('content');
+}
 
 // 페이지 로드 시 주문 상태별 카운트 업데이트
 document.addEventListener('DOMContentLoaded', function() {
@@ -258,19 +255,16 @@ document.addEventListener('DOMContentLoaded', function() {
 // 주문 상태별 카운트 업데이트
 function updateOrderCounts() {
     const orders = Array.from(document.querySelectorAll('#ordersTableBody tr[data-order-id]'));
-    
+
     let received = 0, preparing = 0, completed = 0;
-    
+
     orders.forEach(row => {
-        const statusBadge = row.querySelector('[id^="status-"]');
-        if (statusBadge) {
-            const statusText = statusBadge.textContent.trim();
-            if (statusText === '접수') received++;
-            else if (statusText === '준비중') preparing++;
-            else if (statusText === '완료') completed++;
-        }
+        const statusText = row.querySelector('[id^="status-"]').textContent.trim();
+        if (statusText === '접수') received++;
+        else if (statusText === '준비중') preparing++;
+        else if (statusText === '완료') completed++;
     });
-    
+
     document.getElementById('receivedCount').textContent = received;
     document.getElementById('preparingCount').textContent = preparing;
     document.getElementById('completedCount').textContent = completed;
@@ -280,154 +274,104 @@ function updateOrderCounts() {
 // 주문 상태 변경
 function updateOrderStatus(orderId, newStatus) {
     if (!confirm('주문 상태를 변경하시겠습니까?')) return;
-    
-    const statusTexts = {
-        'RECEIVED': '접수',
-        'PREPARING': '준비중',
-        'COMPLETED': '완료',
-        'CANCELED': '취소'
-    };
-    
-    const statusColors = {
-        'RECEIVED': 'warning',
-        'PREPARING': 'info', 
-        'COMPLETED': 'success',
-        'CANCELED': 'secondary'
-    };
-    
-    // UI 즉시 업데이트
-    const statusBadge = document.getElementById(`status-${orderId}`);
-    if (statusBadge) {
-        statusBadge.textContent = statusTexts[newStatus];
-        statusBadge.className = `badge bg-${statusColors[newStatus]}`;
-    }
-    
-    // 버튼 상태 업데이트
-    const row = document.querySelector(`tr[data-order-id="${orderId}"]`);
-    if (row) {
-        const actionCell = row.querySelector('td:last-child');
-        let newButtons = '';
-        
-        if (newStatus === 'RECEIVED') {
-            newButtons += `
-                <button type="button" class="btn btn-outline-info btn-sm" onclick="updateOrderStatus(${orderId}, 'PREPARING')">
-                    <i class="bi bi-play"></i> 준비시작
-                </button>
-            `;
-        } else if (newStatus === 'PREPARING') {
-            newButtons += `
-                <button type="button" class="btn btn-outline-success btn-sm" onclick="updateOrderStatus(${orderId}, 'COMPLETED')">
-                    <i class="bi bi-check"></i> 완료
-                </button>
-            `;
-        }
-        
-        newButtons += `
-            <button type="button" class="btn btn-outline-primary btn-sm" onclick="viewOrderDetails(${orderId})">
-                <i class="bi bi-eye"></i> 상세
-            </button>
-        `;
-        
-        if (newStatus !== 'COMPLETED') {
-            newButtons += `
-                <button type="button" class="btn btn-outline-danger btn-sm" onclick="cancelOrder(${orderId})">
-                    <i class="bi bi-x"></i> 취소
-                </button>
-            `;
-        }
-        
-        actionCell.innerHTML = `<div class="btn-group btn-group-sm" role="group">${newButtons}</div>`;
-    }
-    
-    // 카운트 업데이트
-    updateOrderCounts();
-    
-    // Socket.IO로 실시간 업데이트 전송
-    socket.emit('orderStatusChanged', { orderId, status: newStatus });
-    
-    // 실제 환경에서는 서버 API 호출
-    console.log(`주문 ${orderId} 상태를 ${newStatus}로 변경`);
+
+    fetch(`/admin/orders/${orderId}/status`, {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-Token': getCsrfToken()
+        },
+        body: JSON.stringify({ status: newStatus })
+    })
+        .then(response => response.json().then(data => ({ ok: response.ok, data })))
+        .then(({ ok, data }) => {
+            if (!ok || !data.success) {
+                throw new Error(data.message || '주문 상태 변경에 실패했습니다.');
+            }
+            location.reload();
+        })
+        .catch(error => {
+            alert(error.message);
+        });
 }
 
 // 주문 취소
 function cancelOrder(orderId) {
     if (!confirm('정말 이 주문을 취소하시겠습니까?')) return;
-    updateOrderStatus(orderId, 'CANCELED');
+    fetch(`/admin/orders/${orderId}/cancel`, {
+        method: 'POST',
+        headers: { 'X-CSRF-Token': getCsrfToken() }
+    })
+        .then(response => response.json().then(data => ({ ok: response.ok, data })))
+        .then(({ ok, data }) => {
+            if (!ok || !data.success) {
+                throw new Error(data.message || '주문 취소에 실패했습니다.');
+            }
+            location.reload();
+        })
+        .catch(error => {
+            alert(error.message);
+        });
 }
 
 // 주문 상세 보기
 function viewOrderDetails(orderId) {
-    // 임시 주문 상세 데이터 (실제로는 API에서 가져옴)
-    const orderDetail = {
-        id: orderId,
-        orderNumber: String(orderId).padStart(4, '0'),
-        createdAt: new Date().toLocaleString('ko-KR'),
-        status: 'RECEIVED',
-        items: [
-            { menuName: '불고기버거', quantity: 1, price: 8000 },
-            { menuName: '감자튀김', quantity: 1, price: 3000 },
-            { menuName: '콜라', quantity: 1, price: 2000 }
-        ],
-        totalPrice: 13000
-    };
-    
-    const content = `
-        <div class="order-receipt p-3">
-            <div class="text-center mb-3">
-                <h4>주문번호: #${orderDetail.orderNumber}</h4>
-                <p class="text-muted">주문시간: ${orderDetail.createdAt}</p>
-            </div>
-            
-            <div class="border-top border-bottom py-3 mb-3">
-                <h6>주문 내역</h6>
-                ${orderDetail.items.map(item => `
-                    <div class="d-flex justify-content-between">
-                        <span>${item.menuName} × ${item.quantity}</span>
-                        <span>${item.price.toLocaleString()}원</span>
+    fetch(`/admin/orders/${orderId}.json`)
+        .then(response => response.json().then(data => ({ ok: response.ok, data })))
+        .then(({ ok, data }) => {
+            if (!ok || !data.success) {
+                throw new Error(data.message || '주문 상세 조회에 실패했습니다.');
+            }
+            const orderDetail = data.data;
+            const orderNumber = escapeHtml(String(orderDetail.id).padStart(4, '0'));
+            const orderTime = escapeHtml(new Date(orderDetail.createdAt).toLocaleString('ko-KR'));
+            const content = `
+                <div class="order-receipt p-3">
+                    <div class="text-center mb-3">
+                        <h4>주문번호: #${orderNumber}</h4>
+                        <p class="text-muted">주문시간: ${orderTime}</p>
                     </div>
-                `).join('')}
-            </div>
-            
-            <div class="d-flex justify-content-between fs-5 fw-bold">
-                <span>총 금액</span>
-                <span>${orderDetail.totalPrice.toLocaleString()}원</span>
-            </div>
-        </div>
-    `;
-    
-    document.getElementById('orderDetailContent').innerHTML = content;
-    new bootstrap.Modal(document.getElementById('orderDetailModal')).show();
-}
 
-// 영수증 출력
-function printOrderReceipt() {
-    window.print();
-}
+                    <div class="border-top border-bottom py-3 mb-3">
+                        <h6>주문 내역</h6>
+                        ${orderDetail.items.map(item => {
+                            const itemName = escapeHtml(item.menuName);
+                            const quantity = item.quantity.toLocaleString();
+                            const price = item.price.toLocaleString();
+                            return `
+                                <div class="d-flex justify-content-between">
+                                    <span>${itemName} × ${quantity}</span>
+                                    <span>${price}원</span>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
 
-// 주문 목록 새로고침
-function refreshOrders() {
-    location.reload();
-}
-
-// 필터 적용
-function applyFilter() {
-    const form = document.getElementById('filterForm');
-    const formData = new FormData(form);
-    const params = new URLSearchParams(formData);
-    window.location.href = `/admin/orders?${params.toString()}`;
+                    <div class="d-flex justify-content-between fs-5 fw-bold">
+                        <span>총 금액</span>
+                        <span>${orderDetail.totalPrice.toLocaleString()}원</span>
+                    </div>
+                </div>
+            `;
+            document.getElementById('orderDetailContent').innerHTML = content;
+            new bootstrap.Modal(document.getElementById('orderDetailModal')).show();
+        })
+        .catch(error => {
+            alert(error.message);
+        });
 }
 
 // Socket.IO 이벤트 리스너
-socket.on('newOrder', function(orderData) {
+window.addEventListener('aiosk:new-order', function() {
     // 새 주문 알림 및 테이블 업데이트
-    console.log('새 주문:', orderData);
-    
-    // 실제로는 새 행을 테이블에 추가하는 로직 구현
-    location.reload(); // 임시로 페이지 새로고침
+    location.reload();
 });
 
-socket.on('orderStatusChanged', function(data) {
-    console.log('주문 상태 변경:', data);
+window.addEventListener('aiosk:order-status-updated', function() {
+    updateOrderCounts();
+});
+
+window.addEventListener('aiosk:order-cancelled', function() {
     updateOrderCounts();
 });
 </script>

@@ -1,0 +1,35 @@
+groups:
+  - name: aiosk-backend
+    rules:
+      - alert: AIOSKBackendMetricsDown
+        expr: up{job="aiosk-backend"} == 0
+        for: 2m
+        labels:
+          severity: critical
+        annotations:
+          summary: AIOSK backend metrics target is down
+          description: Prometheus cannot scrape the backend /metrics endpoint.
+
+      - alert: AIOSKBackendHighServerErrorRate
+        expr: sum(rate(aiosk_http_requests_total{job="aiosk-backend",status_class="5xx"}[5m])) > 0
+        for: 5m
+        labels:
+          severity: warning
+        annotations:
+          summary: AIOSK backend is returning 5xx responses
+          description: At least one 5xx response per second is being observed over a 5 minute window.
+
+      - alert: AIOSKBackendHighLatencyP95
+        expr: |
+          histogram_quantile(
+            0.95,
+            sum by (le) (
+              rate(aiosk_http_request_duration_seconds_bucket{job="aiosk-backend"}[5m])
+            )
+          ) > 1
+        for: 10m
+        labels:
+          severity: warning
+        annotations:
+          summary: AIOSK backend p95 latency is high
+          description: Backend p95 request latency has stayed above 1 second for 10 minutes.

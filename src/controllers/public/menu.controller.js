@@ -1,5 +1,20 @@
 // src/controllers/public/menu.controller.js
 const Menu = require("../../models/menu.model.js");
+const logger = require("../../utils/logger.js");
+
+const parseNonNegativeAmount = (value) => {
+  if (typeof value === 'number' && Number.isFinite(value) && value >= 0) {
+    return value;
+  }
+
+  const text = typeof value === 'string' ? value.trim() : '';
+  const parsed = /^(0|[1-9][0-9]*)(\.[0-9]+)?$/.test(text) ? Number(text) : null;
+  if (parsed !== null && Number.isFinite(parsed)) {
+    return parsed;
+  }
+
+  throw new Error('Invalid menu price from database.');
+};
 
 // 공개 메뉴 목록 조회 (인증 불필요)
 exports.findAll = async (req, res) => {
@@ -13,8 +28,9 @@ exports.findAll = async (req, res) => {
     
     // categoryId가 제공된 경우 해당 카테고리 메뉴만 필터링
     if (categoryId) {
-      const parsedCategoryId = parseInt(categoryId, 10);
-      if (isNaN(parsedCategoryId)) {
+      const rawCategoryId = typeof categoryId === 'string' ? categoryId.trim() : '';
+      const parsedCategoryId = /^[1-9][0-9]*$/.test(rawCategoryId) ? Number(rawCategoryId) : null;
+      if (!Number.isSafeInteger(parsedCategoryId)) {
         return res.status(400).json({
           message: "유효하지 않은 카테고리 ID입니다."
         });
@@ -29,7 +45,7 @@ exports.findAll = async (req, res) => {
       menuId: menu.id,
       name: menu.name,
       description: menu.description,
-      price: parseFloat(menu.price), // Decimal을 number로 변환
+      price: parseNonNegativeAmount(menu.price),
       imageUrl: menu.image_url,
       status: menu.status,
       categoryId: menu.category_id
@@ -37,7 +53,7 @@ exports.findAll = async (req, res) => {
 
     res.status(200).json(publicMenus);
   } catch (err) {
-    console.error("Error retrieving public menus:", err);
+    logger.logError(err, req, { context: 'Public menu list' });
     res.status(500).json({
       message: "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
     });

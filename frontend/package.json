@@ -1,13 +1,14 @@
 {
-  "name": "frontend",
+  "name": "aiosk-frontend",
   "private": true,
-  "version": "0.0.0",
+  "version": "1.0.0",
+  "description": "AIOSK kiosk ordering frontend for the All-In-One Smart Kiosk system",
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "prebuild": "node scripts/validate-build-env.js",
     "build": "tsc -b && vite build",
-    "lint": "eslint .",
-    "preview": "vite preview"
+    "lint": "eslint ."
   },
   "dependencies": {
     "@emotion/react": "^11.14.0",
@@ -16,15 +17,11 @@
     "@mui/material": "^7.1.2",
     "@reduxjs/toolkit": "^2.8.2",
     "@tanstack/react-query": "^5.81.2",
-    "@types/qrcode": "^1.5.5",
     "axios": "^1.10.0",
     "framer-motion": "^12.19.1",
-    "qrcode": "^1.5.4",
     "react": "^19.1.0",
     "react-dom": "^19.1.0",
-    "react-redux": "^9.2.0",
-    "react-router-dom": "^7.6.2",
-    "socket.io-client": "^4.8.1"
+    "react-redux": "^9.2.0"
   },
   "devDependencies": {
     "@eslint/js": "^9.25.0",

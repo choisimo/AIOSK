@@ -1,14 +1,31 @@
 {
   "name": "aiosk-backend",
   "version": "1.0.0",
-  "description": "All-In-One Smart Kiosk - Enterprise-grade backend API system for modern restaurant kiosk services",
+  "description": "All-In-One Smart Kiosk - full-stack kiosk ordering and admin operations system",
   "main": "src/server.js",
   "scripts": {
     "start": "node src/server.js",
     "dev": "nodemon src/server.js",
-    "test": "echo \"Automated tests coming in v1.1 - Use manual test pages for now\" && exit 0",
-    "docs": "echo \"API documentation available at http://localhost:3000/api-docs\" && npm start",
-    "setup": "echo \"Setting up AIOSK...\" && npm install && echo \"Please configure .env file and run: npm run dev\""
+    "test": "node scripts/verify-static.js",
+    "deps:check": "npx --yes depcheck@1.4.7 --ignores=bootstrap,bootstrap-icons,chart.js && cd frontend && npx --yes depcheck@1.4.7",
+    "test:e2e": "node scripts/e2e-db-api.js",
+    "test:e2e:browser": "node scripts/e2e-browser.js",
+    "admin:create": "node scripts/create-admin.js",
+    "db:backup": "bash scripts/db-backup.sh",
+    "db:restore": "bash scripts/db-restore.sh",
+    "db:restore:drill": "bash scripts/db-restore-drill.sh",
+    "db:backup:check": "bash -n scripts/db-backup.sh scripts/db-restore.sh scripts/db-restore-drill.sh scripts/db-apply-schema.sh scripts/deploy-compose.sh scripts/deploy-remote-compose.sh scripts/github-actions-secrets-audit.sh scripts/github-environment-audit.sh scripts/production-preflight.sh",
+    "ops:preflight": "bash scripts/production-preflight.sh",
+    "ops:smoke": "node scripts/ops-smoke.js",
+    "ops:heartbeat-soak": "node scripts/heartbeat-soak.js",
+    "ops:github-env:check": "bash scripts/github-environment-audit.sh",
+    "ops:github-actions:check": "bash scripts/github-actions-secrets-audit.sh",
+    "db:apply-schema": "bash scripts/db-apply-schema.sh",
+    "db:migrate": "node scripts/db-migrate.js",
+    "db:migrate:status": "node scripts/db-migrate.js status",
+    "db:rollback": "node scripts/db-migrate.js down",
+    "deploy:compose": "bash scripts/deploy-compose.sh",
+    "deploy:remote": "bash scripts/deploy-remote-compose.sh"
   },
   "keywords": [
     "kiosk",
@@ -20,6 +37,8 @@
     "socket.io",
     "jwt",
     "swagger",
+    "docker",
+    "migration",
     "order-management",
     "real-time",
     "file-upload",
@@ -28,31 +47,22 @@
   ],
   "author": "AIOSK Development Team",
   "license": "ISC",
-  "repository": {
-    "type": "git",
-    "url": "https://github.com/your-username/aiosk.git"
-  },
-  "bugs": {
-    "url": "https://github.com/your-username/aiosk/issues"
-  },
-  "homepage": "https://github.com/your-username/aiosk#readme",
   "engines": {
-    "node": ">=18.0.0",
+    "node": ">=20.0.0",
     "npm": ">=8.0.0"
   },
   "dependencies": {
     "bcrypt": "^6.0.0",
-    "chart.js": "^4.5.0",
-    "connect-flash": "^0.1.1",
+    "bootstrap": "5.3.0",
+    "bootstrap-icons": "1.10.0",
+    "chart.js": "4.4.0",
     "cors": "^2.8.5",
     "dotenv": "^16.5.0",
     "ejs": "^3.1.10",
     "express": "^5.1.0",
     "express-ejs-layouts": "^2.5.1",
-    "express-flash": "^0.0.2",
     "express-session": "^1.18.1",
     "jsonwebtoken": "^9.0.2",
-    "moment": "^2.30.1",
     "morgan": "^1.10.0",
     "multer": "^2.0.1",
     "mysql2": "^3.14.1",
@@ -62,6 +72,7 @@
     "winston": "^3.11.0"
   },
   "devDependencies": {
-    "nodemon": "^3.1.10"
+    "nodemon": "^3.1.10",
+    "playwright": "^1.60.0"
   }
 }

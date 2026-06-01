@@ -1,0 +1,12 @@
+node_modules
+dist
+dist-ssr
+coverage
+.env
+.env.*
+.cache
+.vite
+.git
+.gitignore
+*.log
+*.tgz

@@ -18,6 +18,8 @@
  *             properties:
  *               items:
  *                 type: array
+ *                 minItems: 1
+ *                 maxItems: 100
  *                 items:
  *                   type: object
  *                   required:
@@ -30,8 +32,9 @@
  *                       example: 1
  *                     quantity:
  *                       type: integer
- *                       description: 주문 수량
+ *                       description: 주문 수량 (품목당 1-99개)
  *                       minimum: 1
+ *                       maximum: 99
  *                       example: 2
  *           example:
  *             items:
@@ -56,6 +59,7 @@
  *                   example: 13500.00
  *                 status:
  *                   type: string
+ *                   enum: [RECEIVED]
  *                   example: "RECEIVED"
  *                 createdAt:
  *                   type: string
@@ -66,12 +70,19 @@
  *                   items:
  *                     type: object
  *                     properties:
+ *                       menuId:
+ *                         type: integer
+ *                         example: 1
  *                       menuName:
  *                         type: string
  *                         example: "아메리카노"
  *                       quantity:
  *                         type: integer
  *                         example: 2
+ *                       pricePerItem:
+ *                         type: number
+ *                         format: decimal
+ *                         example: 4500.00
  *                       price:
  *                         type: number
  *                         format: decimal
@@ -97,7 +108,7 @@
  *                 summary: 유효하지 않은 수량
  *                 value:
  *                   success: false
- *                   message: "유효하지 않은 수량입니다: 0. 양의 정수여야 합니다."
+ *                   message: "유효하지 않은 수량입니다: 100. 1 이상 99 이하의 정수여야 합니다."
  *       500:
  *         description: 서버 오류
  *         content:
@@ -108,9 +119,8 @@
 
 module.exports = app => {
   const publicOrders = require("../../controllers/public/order.controller.js");
-  var router = require("express").Router();
+  const router = require("express").Router();
 
-  // 공개 주문 생성 (인증 불필요)
   router.post("/", publicOrders.create);
 
   app.use('/api/public/orders', router);

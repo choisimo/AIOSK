@@ -1,0 +1,14 @@
+[Unit]
+Description=AIOSK MySQL backup
+Documentation=file:/opt/aiosk/README.md file:/opt/aiosk/OPERATIONS_RUNBOOK.md
+
+[Service]
+Type=oneshot
+WorkingDirectory=/opt/aiosk
+EnvironmentFile=/opt/aiosk/.env.production
+Environment=BACKUP_ENV_FILE=/opt/aiosk/.env.production
+Environment=BACKUP_DIR=/var/backups/aiosk
+Environment=BACKUP_RETENTION_DAYS=14
+Environment=BACKUP_MIN_KEEP=7
+# Set BACKUP_UPLOAD_COMMAND in /opt/aiosk/.env.production when provider CLI credentials are installed.
+ExecStart=/usr/bin/env bash /opt/aiosk/scripts/db-backup.sh

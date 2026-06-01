@@ -1,38 +1,50 @@
 // src/controllers/admin.controller.js
 const Admin = require("../models/admin.model.js");
-const bcrypt = require('bcrypt'); // Corrected library name
+const bcrypt = require('bcrypt');
 const jwt = require('jsonwebtoken');
-require('dotenv').config(); // To access process.env.JWT_SECRET
+const logger = require('../utils/logger.js');
 
 // Admin Login
 exports.login = async (req, res) => {
-  if (!req.body.username || !req.body.password) {
+  const username = typeof req.body?.username === 'string' ? req.body.username.trim() : '';
+  const password = typeof req.body?.password === 'string' ? req.body.password : '';
+
+  if (!username || !password) {
+    logger.logWarning('Admin API login failed', {
+      context: 'Admin API login',
+      reason: 'missing_credentials',
+      username: username.slice(0, 100),
+      ip: req.ip,
+      requestId: req.id
+    });
     return res.status(400).send({ message: "Username and password are required!" });
   }
 
-  const { username, password } = req.body;
-
   try {
     const admin = await Admin.findByUsername(username);
-    if (!admin) {
-      return res.status(401).send({ message: "Invalid username or password." }); // Generic message
-    }
+    const passwordMatches = admin ? await bcrypt.compare(password, admin.password) : false;
 
-    const isPasswordMatching = await bcrypt.compare(password, admin.password);
-    if (!isPasswordMatching) {
-      return res.status(401).send({ message: "Invalid username or password." }); // Generic message
+    if (!admin || !passwordMatches) {
+      logger.logWarning('Admin API login failed', {
+        context: 'Admin API login',
+        reason: 'invalid_credentials',
+        username: username.slice(0, 100),
+        ip: req.ip,
+        requestId: req.id
+      });
+      return res.status(401).send({ message: "Invalid username or password." });
     }
 
     // Passwords match, create JWT
     if (!process.env.JWT_SECRET) {
-        console.error("JWT_SECRET is not defined in .env file");
+        logger.logError(new Error('JWT_SECRET is not defined for admin token signing.'), req);
         return res.status(500).send({ message: "Authentication configuration error." });
     }
 
     const token = jwt.sign(
         { id: admin.id, username: admin.username },
         process.env.JWT_SECRET,
-        { expiresIn: '1h' } // Token expires in 1 hour, adjust as needed
+        { expiresIn: '1h' }
     );
 
     // For security, do not send password back, even the hash
@@ -46,39 +58,7 @@ exports.login = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("Login error:", error);
-    // Differentiate internal errors from auth failures if possible
-    res.status(500).send({ message: error.message || "Error during login process." });
-  }
-};
-
-// Admin Registration (for creating admin accounts)
-exports.register = async (req, res) => {
-  if (!req.body.username || !req.body.password) {
-    return res.status(400).send({ message: "Username and password are required for registration!" });
-  }
-  // Add more validation if needed (e.g., password strength)
-  if (req.body.password.length < 6) { // Example: Minimum password length
-      return res.status(400).send({ message: "Password must be at least 6 characters long." });
-  }
-
-  const admin = new Admin({
-    username: req.body.username,
-    password: req.body.password // Plain password, will be hashed by model
-  });
-
-  try {
-    const createdAdmin = await Admin.create(admin); // Model now handles hashing
-    // Do not send password back in response
-    res.status(201).send({
-      message: "Admin registered successfully",
-      data: { id: createdAdmin.id, username: createdAdmin.username }
-    });
-  } catch (error) {
-    if (error.kind === "duplicate_username") {
-        return res.status(409).send({ message: "Username already exists." }); // 409 Conflict
-    }
-    console.error("Registration error:", error);
-    res.status(500).send({ message: error.message || "Error during registration." });
+    logger.logError(error, req, { context: 'Admin API login' });
+    res.status(500).send({ message: "Error during login process." });
   }
 };

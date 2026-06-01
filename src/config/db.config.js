@@ -1,5 +1,7 @@
 // src/config/db.config.js
 require('dotenv').config(); // Ensure this is at the top if you run this file independently
+const { loadEnvFileSecrets } = require('../utils/envSecrets');
+loadEnvFileSecrets();
 
 module.exports = {
   host: process.env.DB_HOST,

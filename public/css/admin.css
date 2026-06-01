@@ -2,13 +2,9 @@
 
 :root {
     --primary-color: #0d6efd;
-    --secondary-color: #6c757d;
     --success-color: #198754;
     --warning-color: #ffc107;
-    --danger-color: #dc3545;
     --info-color: #0dcaf0;
-    --light-color: #f8f9fa;
-    --dark-color: #212529;
 }
 
 /* 기본 레이아웃 */
@@ -70,27 +66,6 @@ body {
     font-size: 0.875rem;
 }
 
-/* 애니메이션 */
-@keyframes fadeIn {
-    from { opacity: 0; transform: translateY(20px); }
-    to { opacity: 1; transform: translateY(0); }
-}
-
-.fade-in {
-    animation: fadeIn 0.3s ease-out;
-}
-
-/* 실시간 업데이트 하이라이트 */
-.highlight-new {
-    background-color: #fff3cd !important;
-    animation: highlightFade 3s ease-out;
-}
-
-@keyframes highlightFade {
-    0% { background-color: #fff3cd; }
-    100% { background-color: transparent; }
-}
-
 /* 차트 컨테이너 */
 .chart-area {
     position: relative;
@@ -150,22 +125,6 @@ body {
     border-radius: 0 0 0.5rem 0.5rem;
 }
 
-/* 로딩 스피너 */
-.loading-spinner {
-    display: inline-block;
-    width: 1rem;
-    height: 1rem;
-    border: 0.125rem solid rgba(0, 0, 0, 0.1);
-    border-top: 0.125rem solid var(--primary-color);
-    border-radius: 50%;
-    animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-    0% { transform: rotate(0deg); }
-    100% { transform: rotate(360deg); }
-}
-
 /* 반응형 스타일 */
 @media (max-width: 768px) {
     .sidebar-sticky {
@@ -183,15 +142,6 @@ body {
     }
 }
 
-/* 다크 모드 지원 (추후 확장용) */
-@media (prefers-color-scheme: dark) {
-    :root {
-        --bg-color: #1a1a1a;
-        --text-color: #ffffff;
-        --card-bg: #2d2d2d;
-    }
-}
-
 /* 접근성 개선 */
 .btn:focus,
 .form-control:focus,
@@ -204,8 +154,7 @@ body {
     .sidebar-sticky,
     .navbar,
     .btn,
-    .modal,
-    .footer {
+    .modal {
         display: none !important;
     }
     
@@ -239,59 +188,4 @@ body {
 
 .text-gray-500 {
     color: #858796 !important;
-}
-
-/* 상태 아이콘 */
-.status-icon {
-    width: 12px;
-    height: 12px;
-    border-radius: 50%;
-    display: inline-block;
-    margin-right: 0.5rem;
-}
-
-.status-online {
-    background-color: var(--success-color);
-}
-
-.status-offline {
-    background-color: var(--danger-color);
-}
-
-.status-warning {
-    background-color: var(--warning-color);
-}
-
-/* 실시간 업데이트 표시 */
-.live-indicator {
-    position: relative;
-}
-
-.live-indicator::before {
-    content: '';
-    position: absolute;
-    top: -2px;
-    right: -2px;
-    width: 8px;
-    height: 8px;
-    background-color: var(--success-color);
-    border-radius: 50%;
-    animation: pulse 2s infinite;
-}
-
-@keyframes pulse {
-    0% {
-        transform: scale(0.95);
-        box-shadow: 0 0 0 0 rgba(25, 135, 84, 0.7);
-    }
-    
-    70% {
-        transform: scale(1);
-        box-shadow: 0 0 0 10px rgba(25, 135, 84, 0);
-    }
-    
-    100% {
-        transform: scale(0.95);
-        box-shadow: 0 0 0 0 rgba(25, 135, 84, 0);
-    }
 }

@@ -1,66 +1,22 @@
 // 키오스크 사운드 효과 유틸리티
+type AudioContextConstructor = typeof AudioContext;
+
 export class KioskSoundManager {
   private static audioContext: AudioContext | null = null;
 
-  private static getAudioContext(): AudioContext {
-    if (!KioskSoundManager.audioContext) {
-      const AudioContextClass = window.AudioContext || (window as unknown as typeof AudioContext);
-      KioskSoundManager.audioContext = new AudioContextClass();
-    }
-    return KioskSoundManager.audioContext;
-  }
-
-  // 주문 완료 성공 사운드
-  static playOrderSuccessSound(): void {
-    try {
-      // C4, E4, G4 코드 (성공 멜로디)
-      const notes = [
-        { frequency: 261.63, duration: 0.2, delay: 0 },     // C4
-        { frequency: 329.63, duration: 0.2, delay: 0.15 },  // E4
-        { frequency: 392.00, duration: 0.4, delay: 0.3 }    // G4
-      ];
-
-      notes.forEach(note => {
-        setTimeout(() => {
-          KioskSoundManager.playTone(note.frequency, note.duration);
-        }, note.delay * 1000);
-      });
-    } catch (error) {
-      console.log('사운드 재생 실패:', error);
-    }
-  }
-
-  // 버튼 클릭 사운드
-  static playClickSound(): void {
-    try {
-      KioskSoundManager.playTone(800, 0.1);
-    } catch (error) {
-      console.log('클릭 사운드 재생 실패:', error);
-    }
-  }
-
-  // 에러 사운드
-  static playErrorSound(): void {
-    try {
-      // 낮은 음으로 에러 표시
-      const notes = [
-        { frequency: 220, duration: 0.3, delay: 0 },
-        { frequency: 196, duration: 0.3, delay: 0.2 }
-      ];
-
-      notes.forEach(note => {
-        setTimeout(() => {
-          KioskSoundManager.playTone(note.frequency, note.duration);
-        }, note.delay * 1000);
-      });
-    } catch (error) {
-      console.log('에러 사운드 재생 실패:', error);
-    }
-  }
-
   // 기본 톤 재생 함수
   private static playTone(frequency: number, duration: number): void {
-    const audioContext = KioskSoundManager.getAudioContext();
+    let audioContext = KioskSoundManager.audioContext;
+    if (!audioContext) {
+      const AudioContextClass = window.AudioContext || (window as Window & {
+        webkitAudioContext?: AudioContextConstructor;
+      }).webkitAudioContext;
+      if (!AudioContextClass) {
+        throw new Error('AudioContext is not supported.');
+      }
+      audioContext = new AudioContextClass();
+      KioskSoundManager.audioContext = audioContext;
+    }
     const oscillator = audioContext.createOscillator();
     const gainNode = audioContext.createGain();
 
@@ -79,19 +35,51 @@ export class KioskSoundManager {
     oscillator.stop(audioContext.currentTime + duration);
   }
 
-  // 알림 사운드 (벨 효과)
-  static playNotificationSound(): void {
+  // 주문 완료 성공 사운드
+  static playOrderSuccessSound(): void {
     try {
-      // 벨 같은 효과를 위한 여러 주파수
-      const frequencies = [800, 1000, 1200];
-      
-      frequencies.forEach((freq, index) => {
+      // C4, E4, G4 코드 (성공 멜로디)
+      const notes = [
+        { frequency: 261.63, duration: 0.2, delay: 0 },     // C4
+        { frequency: 329.63, duration: 0.2, delay: 0.15 },  // E4
+        { frequency: 392.00, duration: 0.4, delay: 0.3 }    // G4
+      ];
+
+      notes.forEach(note => {
         setTimeout(() => {
-          KioskSoundManager.playTone(freq, 0.15);
-        }, index * 100);
+          KioskSoundManager.playTone(note.frequency, note.duration);
+        }, note.delay * 1000);
       });
-    } catch (error) {
-      console.log('알림 사운드 재생 실패:', error);
+    } catch {
+      // Audio feedback is optional and can be blocked by browser policy.
+    }
+  }
+
+  // 버튼 클릭 사운드
+  static playClickSound(): void {
+    try {
+      KioskSoundManager.playTone(800, 0.1);
+    } catch {
+      // Audio feedback is optional and can be blocked by browser policy.
+    }
+  }
+
+  // 에러 사운드
+  static playErrorSound(): void {
+    try {
+      // 낮은 음으로 에러 표시
+      const notes = [
+        { frequency: 220, duration: 0.3, delay: 0 },
+        { frequency: 196, duration: 0.3, delay: 0.2 }
+      ];
+
+      notes.forEach(note => {
+        setTimeout(() => {
+          KioskSoundManager.playTone(note.frequency, note.duration);
+        }, note.delay * 1000);
+      });
+    } catch {
+      // Audio feedback is optional and can be blocked by browser policy.
     }
   }
 }

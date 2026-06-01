@@ -1,27 +1,98 @@
 // src/controllers/menu.controller.js
+const fs = require('fs');
 const Menu = require("../models/menu.model.js");
+const logger = require("../utils/logger.js");
+
+const MENU_STATUSES = ['FOR_SALE', 'SOLD_OUT'];
+
+const parsePositiveInteger = (value) => {
+  const text = typeof value === 'number'
+    ? String(value)
+    : (typeof value === 'string' ? value.trim() : '');
+  const parsed = /^[1-9][0-9]*$/.test(text) ? Number(text) : null;
+  return Number.isSafeInteger(parsed) ? parsed : null;
+};
+
+const parseNonNegativePrice = (value) => {
+  if (typeof value === 'number') {
+    return Number.isFinite(value) && value >= 0 ? value : null;
+  }
+
+  const text = typeof value === 'string' ? value.trim() : '';
+  const parsed = /^(0|[1-9][0-9]*)(\.[0-9]+)?$/.test(text) ? Number(text) : null;
+  return Number.isFinite(parsed) ? parsed : null;
+};
+
+const normalizeRequiredText = (value) => {
+  if (typeof value !== 'string') return null;
+  const text = value.trim();
+  return text ? text : null;
+};
+
+const normalizeOptionalText = (value) => {
+  if (value === undefined) return undefined;
+  if (value === null) return null;
+  if (typeof value !== 'string') return null;
+  const text = value.trim();
+  return text || null;
+};
+
+const parseMenuStatus = (value, allowDefault) => {
+  if (value === undefined || (allowDefault && value === '')) return undefined;
+  if (typeof value !== 'string') return null;
+  const status = value.trim();
+  return MENU_STATUSES.includes(status) ? status : null;
+};
+
+const removeUploadedFile = (file, req, context) => {
+  if (!file?.path) return;
+
+  try {
+    fs.unlinkSync(file.path);
+  } catch (unlinkError) {
+    logger.logError(unlinkError, req, { context });
+  }
+};
 
 // Create and Save a new Menu
 exports.create = async (req, res) => {
   // Validate request
-  if (!req.body.name || req.body.price === undefined || !req.body.category_id) {
+  const name = normalizeRequiredText(req.body.name);
+  if (!name || req.body.price === undefined || req.body.category_id === undefined || req.body.category_id === '') {
     return res.status(400).send({
       message: "Name, price, and category_id are required fields!"
     });
   }
-  if (parseFloat(req.body.price) < 0) {
-    return res.status(400).send({ message: "Price cannot be negative." });
+  const categoryId = parsePositiveInteger(req.body.category_id);
+  if (categoryId === null) {
+    return res.status(400).send({ message: "Invalid category_id format." });
   }
+  const price = parseNonNegativePrice(req.body.price);
+  if (price === null) {
+    return res.status(400).send({ message: "Price must be a non-negative number." });
+  }
+  const status = parseMenuStatus(req.body.status, true);
+  if (status === null) {
+    return res.status(400).send({ message: "Invalid menu status." });
+  }
+  if (req.body.image_url !== undefined && req.body.image_url !== null && typeof req.body.image_url !== 'string') {
+    return res.status(400).send({ message: "image_url must be a string if provided." });
+  }
+  if (req.body.description !== undefined && req.body.description !== null && typeof req.body.description !== 'string') {
+    return res.status(400).send({ message: "description must be a string if provided." });
+  }
+  const imageUrl = normalizeOptionalText(req.body.image_url);
+  const description = normalizeOptionalText(req.body.description);
   // Potentially check if category_id exists in Categories table (optional, DB foreign key should handle)
 
-  const menu = new Menu({
-    name: req.body.name,
-    price: req.body.price,
-    category_id: req.body.category_id,
-    image_url: req.body.image_url,
-    description: req.body.description,
-    status: req.body.status // Model handles default if undefined
-  });
+  const menu = {
+    name,
+    price,
+    category_id: categoryId,
+    image_url: imageUrl,
+    description,
+    status // Model handles default if undefined
+  };
 
   try {
     const data = await Menu.create(menu);
@@ -29,8 +100,9 @@ exports.create = async (req, res) => {
     const createdMenuWithDetails = await Menu.findById(data.id);
     res.status(201).send(createdMenuWithDetails || data);
   } catch (err) {
+    logger.logError(err, req, { context: 'Admin menu create' });
     res.status(500).send({
-      message: err.message || "Some error occurred while creating the Menu."
+      message: "Some error occurred while creating the Menu."
     });
   }
 };
@@ -39,24 +111,42 @@ exports.create = async (req, res) => {
 exports.findAll = async (req, res) => {
   const { category_id, name, status } = req.query;
   const filters = {};
-  if (category_id) filters.category_id = parseInt(category_id, 10);
-  if (name) filters.name = name;
-  if (status) filters.status = status;
+  if (category_id !== undefined && category_id !== '') {
+    const parsedCategoryId = parsePositiveInteger(category_id);
+    if (parsedCategoryId === null) {
+      return res.status(400).send({ message: "Invalid category_id format." });
+    }
+    filters.category_id = parsedCategoryId;
+  }
+  if (name !== undefined && name !== '') {
+    if (typeof name !== 'string') {
+      return res.status(400).send({ message: "Invalid name filter." });
+    }
+    filters.name = name.trim();
+  }
+  if (status !== undefined && status !== '') {
+    const normalizedStatus = parseMenuStatus(status, false);
+    if (normalizedStatus === null) {
+      return res.status(400).send({ message: "Invalid menu status." });
+    }
+    filters.status = normalizedStatus;
+  }
 
   try {
     const data = await Menu.getAll(filters);
     res.send(data);
   } catch (err) {
+    logger.logError(err, req, { context: 'Admin menu list' });
     res.status(500).send({
-      message: err.message || "Some error occurred while retrieving menus."
+      message: "Some error occurred while retrieving menus."
     });
   }
 };
 
 // Find a single Menu with an id
 exports.findOne = async (req, res) => {
-  const id = parseInt(req.params.id, 10);
-  if (isNaN(id)) {
+  const id = parsePositiveInteger(req.params.id);
+  if (id === null) {
     return res.status(400).send({ message: "Invalid Menu ID format." });
   }
 
@@ -70,7 +160,7 @@ exports.findOne = async (req, res) => {
       });
     }
   } catch (err) {
-    // Consider if model throws specific error kinds e.g. err.kind === "not_found"
+    logger.logError(err, req, { context: 'Admin menu detail' });
     res.status(500).send({
       message: "Error retrieving Menu with id " + id
     });
@@ -79,8 +169,8 @@ exports.findOne = async (req, res) => {
 
 // Update a Menu identified by the id in the request
 exports.update = async (req, res) => {
-  const id = parseInt(req.params.id, 10);
-  if (isNaN(id)) {
+  const id = parsePositiveInteger(req.params.id);
+  if (id === null) {
     return res.status(400).send({ message: "Invalid Menu ID format." });
   }
 
@@ -91,22 +181,45 @@ exports.update = async (req, res) => {
   }
   
   // Validate name if provided
-  if (req.body.name === "") {
+  if (req.body.name !== undefined && normalizeRequiredText(req.body.name) === null) {
     return res.status(400).send({ message: "Menu name cannot be empty if provided for update." });
   }
-  // Validate price if provided
-  if (req.body.price !== undefined && parseFloat(req.body.price) < 0) {
-    return res.status(400).send({ message: "Price cannot be negative." });
-  }
-
   // Construct menu data from req.body, only including fields relevant to Menu model
   const menuDataToUpdate = {};
-  if (req.body.category_id !== undefined) menuDataToUpdate.category_id = req.body.category_id;
-  if (req.body.name !== undefined) menuDataToUpdate.name = req.body.name;
-  if (req.body.price !== undefined) menuDataToUpdate.price = req.body.price;
-  if (req.body.image_url !== undefined) menuDataToUpdate.image_url = req.body.image_url;
-  if (req.body.description !== undefined) menuDataToUpdate.description = req.body.description;
-  if (req.body.status !== undefined) menuDataToUpdate.status = req.body.status;
+  if (req.body.category_id !== undefined) {
+    const categoryId = parsePositiveInteger(req.body.category_id);
+    if (categoryId === null) {
+      return res.status(400).send({ message: "Invalid category_id format." });
+    }
+    menuDataToUpdate.category_id = categoryId;
+  }
+  if (req.body.name !== undefined) menuDataToUpdate.name = normalizeRequiredText(req.body.name);
+  if (req.body.price !== undefined) {
+    const price = parseNonNegativePrice(req.body.price);
+    if (price === null) {
+      return res.status(400).send({ message: "Price must be a non-negative number." });
+    }
+    menuDataToUpdate.price = price;
+  }
+  if (req.body.image_url !== undefined) {
+    if (req.body.image_url !== null && typeof req.body.image_url !== 'string') {
+      return res.status(400).send({ message: "image_url must be a string if provided." });
+    }
+    menuDataToUpdate.image_url = normalizeOptionalText(req.body.image_url);
+  }
+  if (req.body.description !== undefined) {
+    if (req.body.description !== null && typeof req.body.description !== 'string') {
+      return res.status(400).send({ message: "description must be a string if provided." });
+    }
+    menuDataToUpdate.description = normalizeOptionalText(req.body.description);
+  }
+  if (req.body.status !== undefined) {
+    const status = parseMenuStatus(req.body.status, false);
+    if (status === null) {
+      return res.status(400).send({ message: "Invalid menu status." });
+    }
+    menuDataToUpdate.status = status;
+  }
 
 
   try {
@@ -119,6 +232,7 @@ exports.update = async (req, res) => {
       });
     }
   } catch (err) {
+    logger.logError(err, req, { context: 'Admin menu update' });
     res.status(500).send({
       message: "Error updating Menu with id " + id
     });
@@ -127,8 +241,8 @@ exports.update = async (req, res) => {
 
 // Delete a Menu with the specified id in the request
 exports.delete = async (req, res) => {
-  const id = parseInt(req.params.id, 10);
-  if (isNaN(id)) {
+  const id = parsePositiveInteger(req.params.id);
+  if (id === null) {
     return res.status(400).send({ message: "Invalid Menu ID format." });
   }
 
@@ -142,32 +256,18 @@ exports.delete = async (req, res) => {
       });
     }
   } catch (err) {
+    logger.logError(err, req, { context: 'Admin menu delete' });
     res.status(500).send({
       message: "Could not delete Menu with id " + id
     });
   }
 };
 
-// Delete all Menus from the database.
-// This is a sensitive operation, ensure it's properly secured if exposed.
-// The route for this is typically commented out or protected.
-exports.deleteAll = async (req, res) => {
-  const { category_id } = req.query; // Allow filtering by category_id for deletion
-  
-  try {
-    const data = await Menu.removeAll(category_id ? parseInt(category_id, 10) : null);
-    res.send({ message: data.message || 'All specified menus were deleted successfully!' });
-  } catch (err) {
-    res.status(500).send({
-      message: err.message || "Some error occurred while removing menus."
-    });
-  }
-};
-
 // Upload image for a specific menu
 exports.uploadImage = async (req, res) => {
-  const menuId = parseInt(req.params.menuId, 10);
-  if (isNaN(menuId)) {
+  const menuId = parsePositiveInteger(req.params.menuId);
+  if (menuId === null) {
+    removeUploadedFile(req.file, req, 'Menu image upload cleanup');
     return res.status(400).json({ message: "유효하지 않은 메뉴 ID입니다." });
   }
 
@@ -181,8 +281,7 @@ exports.uploadImage = async (req, res) => {
     const existingMenu = await Menu.findById(menuId);
     if (!existingMenu) {
       // 파일이 이미 저장되었으므로 삭제
-      const fs = require('fs');
-      fs.unlinkSync(req.file.path);
+      removeUploadedFile(req.file, req, 'Menu image upload cleanup');
       return res.status(404).json({ message: "메뉴를 찾을 수 없습니다." });
     }
 
@@ -194,8 +293,7 @@ exports.uploadImage = async (req, res) => {
     
     if (!updatedMenu) {
       // 업데이트 실패 시 업로드된 파일 삭제
-      const fs = require('fs');
-      fs.unlinkSync(req.file.path);
+      removeUploadedFile(req.file, req, 'Menu image upload cleanup');
       return res.status(500).json({ message: "이미지 URL 업데이트에 실패했습니다." });
     }
 
@@ -207,17 +305,10 @@ exports.uploadImage = async (req, res) => {
     });
 
   } catch (error) {
-    console.error("이미지 업로드 오류:", error);
+    logger.logError(error, req, { context: 'Menu image upload' });
     
     // 오류 발생 시 업로드된 파일 삭제
-    if (req.file && req.file.path) {
-      const fs = require('fs');
-      try {
-        fs.unlinkSync(req.file.path);
-      } catch (unlinkError) {
-        console.error("임시 파일 삭제 실패:", unlinkError);
-      }
-    }
+    removeUploadedFile(req.file, req, 'Menu image upload cleanup');
 
     res.status(500).json({
       message: "이미지 업로드 중 오류가 발생했습니다."

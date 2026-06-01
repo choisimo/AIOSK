@@ -1,8 +1,7 @@
 // src/models/statistics.model.js
 const sql = require('./db.js');
 
-// Statistics Model
-const Statistics = function() {};
+const Statistics = {};
 
 // 기본 매출 통계 조회
 Statistics.getSalesStatistics = async (startDate, endDate) => {
@@ -41,8 +40,7 @@ Statistics.getSalesStatistics = async (startDate, endDate) => {
     return results[0];
     
   } catch (err) {
-    console.error("매출 통계 조회 오류:", err);
-    throw new Error("매출 통계 조회 중 오류가 발생했습니다.");
+    throw new Error("매출 통계 조회 중 오류가 발생했습니다.", { cause: err });
   } finally {
     connection.release();
   }
@@ -57,7 +55,7 @@ Statistics.getTopSellingMenus = async (limit = 10, startDate, endDate) => {
         m.id as menu_id,
         m.name as menu_name,
         c.name as category_name,
-        SUM(oi.quantity) as total_quantity,
+        COALESCE(SUM(oi.quantity), 0) as total_quantity,
         COUNT(DISTINCT oi.order_id) as order_count,
         COALESCE(SUM(oi.quantity * oi.price_per_item), 0) as total_revenue,
         COALESCE(AVG(oi.price_per_item), 0) as average_price
@@ -84,20 +82,25 @@ Statistics.getTopSellingMenus = async (limit = 10, startDate, endDate) => {
       query += " WHERE " + conditions.join(" AND ");
     }
     
+    const rawLimit = typeof limit === 'string' ? limit.trim() : '';
+    const safeLimit = typeof limit === 'number'
+      ? limit
+      : (/^[1-9][0-9]*$/.test(rawLimit) ? Number(rawLimit) : null);
+    const normalizedLimit = Number.isSafeInteger(safeLimit) && safeLimit > 0
+      ? Math.min(safeLimit, 100)
+      : 10;
+
     query += `
       GROUP BY m.id, m.name, c.name
       ORDER BY total_quantity DESC
-      LIMIT ?
+      LIMIT ${normalizedLimit}
     `;
-    
-    params.push(parseInt(limit));
-    
+
     const [results] = await connection.execute(query, params);
     return results;
     
   } catch (err) {
-    console.error("인기 메뉴 조회 오류:", err);
-    throw new Error("인기 메뉴 조회 중 오류가 발생했습니다.");
+    throw new Error("인기 메뉴 조회 중 오류가 발생했습니다.", { cause: err });
   } finally {
     connection.release();
   }
@@ -143,8 +146,7 @@ Statistics.getDailySales = async (startDate, endDate) => {
     return results;
     
   } catch (err) {
-    console.error("일별 매출 조회 오류:", err);
-    throw new Error("일별 매출 조회 중 오류가 발생했습니다.");
+    throw new Error("일별 매출 조회 중 오류가 발생했습니다.", { cause: err });
   } finally {
     connection.release();
   }
@@ -189,8 +191,7 @@ Statistics.getHourlyOrderAnalysis = async (startDate, endDate) => {
     return results;
     
   } catch (err) {
-    console.error("시간대별 주문 분석 오류:", err);
-    throw new Error("시간대별 주문 분석 중 오류가 발생했습니다.");
+    throw new Error("시간대별 주문 분석 중 오류가 발생했습니다.", { cause: err });
   } finally {
     connection.release();
   }
@@ -205,7 +206,7 @@ Statistics.getCategorySales = async (startDate, endDate) => {
         c.id as category_id,
         c.name as category_name,
         COUNT(DISTINCT oi.order_id) as order_count,
-        SUM(oi.quantity) as total_quantity,
+        COALESCE(SUM(oi.quantity), 0) as total_quantity,
         COALESCE(SUM(oi.quantity * oi.price_per_item), 0) as category_revenue,
         COUNT(DISTINCT m.id) as menu_count
       FROM Categories c
@@ -244,8 +245,7 @@ Statistics.getCategorySales = async (startDate, endDate) => {
     return results;
     
   } catch (err) {
-    console.error("카테고리별 매출 분석 오류:", err);
-    throw new Error("카테고리별 매출 분석 중 오류가 발생했습니다.");
+    throw new Error("카테고리별 매출 분석 중 오류가 발생했습니다.", { cause: err });
   } finally {
     connection.release();
   }
@@ -276,8 +276,7 @@ Statistics.getDashboardStats = async (startDate, endDate) => {
     };
     
   } catch (err) {
-    console.error("대시보드 통계 조회 오류:", err);
-    throw new Error("대시보드 통계 조회 중 오류가 발생했습니다.");
+    throw new Error("대시보드 통계 조회 중 오류가 발생했습니다.", { cause: err });
   }
 };
 

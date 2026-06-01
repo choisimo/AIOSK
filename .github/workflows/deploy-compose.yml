@@ -1,0 +1,204 @@
+name: Deploy Compose
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: GitHub Environment to deploy through
+        required: true
+        default: production
+      image_tag:
+        description: GHCR image tag to deploy
+        required: true
+      remote_path:
+        description: Absolute path on the remote host
+        required: true
+        default: /opt/aiosk
+      remote_env_file:
+        description: Env file path relative to remote_path
+        required: true
+        default: .env.production
+      compose_project_name:
+        description: Docker Compose project name
+        required: true
+        default: aiosk
+      monitoring_profile:
+        description: Start monitoring profile too
+        required: true
+        type: choice
+        options:
+          - "0"
+          - "1"
+        default: "0"
+      run_migrations:
+        description: Run pending DB migrations before starting the new backend
+        required: true
+        type: choice
+        options:
+          - "0"
+          - "1"
+        default: "1"
+      run_smoke:
+        description: Run read-only deployment smoke on the remote host after compose up
+        required: true
+        type: choice
+        options:
+          - "0"
+          - "1"
+        default: "0"
+      smoke_base_url:
+        description: Public backend URL for smoke checks, for example https://api.example.com
+        required: false
+        default: ""
+
+permissions:
+  contents: read
+
+concurrency:
+  group: deploy-${{ inputs.environment }}
+  cancel-in-progress: false
+
+jobs:
+  deploy:
+    name: Deploy production compose
+    runs-on: ubuntu-latest
+    environment: ${{ inputs.environment }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Validate deployment inputs
+        shell: bash
+        env:
+          INPUT_IMAGE_TAG: ${{ inputs.image_tag }}
+          INPUT_REMOTE_PATH: ${{ inputs.remote_path }}
+          INPUT_REMOTE_ENV_FILE: ${{ inputs.remote_env_file }}
+          INPUT_COMPOSE_PROJECT_NAME: ${{ inputs.compose_project_name }}
+          INPUT_MONITORING_PROFILE: ${{ inputs.monitoring_profile }}
+          INPUT_RUN_MIGRATIONS: ${{ inputs.run_migrations }}
+          INPUT_RUN_SMOKE: ${{ inputs.run_smoke }}
+          INPUT_SMOKE_BASE_URL: ${{ inputs.smoke_base_url }}
+        run: |
+          safe_url_pattern='^https?://[^[:space:]]+$'
+          if ! [[ "$INPUT_IMAGE_TAG" =~ ^[A-Za-z0-9._-]+$ ]]; then
+            echo "image_tag contains unsupported characters" >&2
+            exit 1
+          fi
+          if [ "$INPUT_IMAGE_TAG" = "latest" ]; then
+            echo "image_tag must be an immutable release tag, not latest." >&2
+            exit 1
+          fi
+          if ! [[ "$INPUT_REMOTE_PATH" =~ ^/[A-Za-z0-9._/-]+$ ]] || [ "$INPUT_REMOTE_PATH" = "/" ]; then
+            echo "remote_path must be an absolute non-root path with safe characters" >&2
+            exit 1
+          fi
+          if ! [[ "$INPUT_REMOTE_ENV_FILE" =~ ^[A-Za-z0-9._/-]+$ ]]; then
+            echo "remote_env_file contains unsupported characters" >&2
+            exit 1
+          fi
+          if ! [[ "$INPUT_COMPOSE_PROJECT_NAME" =~ ^[A-Za-z0-9_-]+$ ]]; then
+            echo "compose_project_name contains unsupported characters" >&2
+            exit 1
+          fi
+          if [ "$INPUT_MONITORING_PROFILE" != "0" ] && [ "$INPUT_MONITORING_PROFILE" != "1" ]; then
+            echo "monitoring_profile must be 0 or 1" >&2
+            exit 1
+          fi
+          if [ "$INPUT_RUN_MIGRATIONS" != "0" ] && [ "$INPUT_RUN_MIGRATIONS" != "1" ]; then
+            echo "run_migrations must be 0 or 1" >&2
+            exit 1
+          fi
+          if [ "$INPUT_RUN_SMOKE" != "0" ] && [ "$INPUT_RUN_SMOKE" != "1" ]; then
+            echo "run_smoke must be 0 or 1" >&2
+            exit 1
+          fi
+          if [ -n "$INPUT_SMOKE_BASE_URL" ] && ! [[ "$INPUT_SMOKE_BASE_URL" =~ $safe_url_pattern ]]; then
+            echo "smoke_base_url must be an http or https URL with safe characters" >&2
+            exit 1
+          fi
+
+      - name: Validate deployment secrets
+        shell: bash
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT }}
+        run: |
+          missing=0
+          for secret_name in DEPLOY_SSH_HOST DEPLOY_SSH_USER DEPLOY_SSH_PRIVATE_KEY; do
+            if [ -z "${!secret_name}" ]; then
+              echo "$secret_name secret is required." >&2
+              missing=$((missing + 1))
+            fi
+          done
+          if [ "$missing" -gt 0 ]; then
+            exit 1
+          fi
+          if [ -n "$DEPLOY_SSH_PORT" ] && { ! [[ "$DEPLOY_SSH_PORT" =~ ^[1-9][0-9]*$ ]] || [ "${#DEPLOY_SSH_PORT}" -gt 5 ] || [ "$DEPLOY_SSH_PORT" -gt 65535 ]; }; then
+            echo "DEPLOY_SSH_PORT must be a positive integer between 1 and 65535." >&2
+            exit 1
+          fi
+
+      - name: Set image references
+        shell: bash
+        run: |
+          repository_owner="$(echo "${GITHUB_REPOSITORY_OWNER}" | tr '[:upper:]' '[:lower:]')"
+          {
+            echo "AIOSK_BACKEND_IMAGE=ghcr.io/${repository_owner}/aiosk-backend:${{ inputs.image_tag }}"
+            echo "AIOSK_FRONTEND_IMAGE=ghcr.io/${repository_owner}/aiosk-frontend:${{ inputs.image_tag }}"
+          } >> "$GITHUB_ENV"
+
+      - name: Prepare SSH
+        shell: bash
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_PRIVATE_KEY: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT }}
+          DEPLOY_KNOWN_HOSTS: ${{ secrets.DEPLOY_KNOWN_HOSTS }}
+        run: |
+          mkdir -p "$HOME/.ssh"
+          chmod 700 "$HOME/.ssh"
+          printf '%s\n' "$DEPLOY_SSH_PRIVATE_KEY" > "$HOME/.ssh/aiosk_deploy_key"
+          chmod 600 "$HOME/.ssh/aiosk_deploy_key"
+
+          ssh_port="${DEPLOY_SSH_PORT:-22}"
+          if [ -n "$DEPLOY_KNOWN_HOSTS" ]; then
+            printf '%s\n' "$DEPLOY_KNOWN_HOSTS" > "$HOME/.ssh/known_hosts"
+          else
+            ssh-keyscan -p "$ssh_port" "$DEPLOY_SSH_HOST" > "$HOME/.ssh/known_hosts"
+          fi
+          chmod 600 "$HOME/.ssh/known_hosts"
+
+      - name: Deploy on remote host
+        shell: bash
+        env:
+          DEPLOY_SSH_HOST: ${{ secrets.DEPLOY_SSH_HOST }}
+          DEPLOY_SSH_USER: ${{ secrets.DEPLOY_SSH_USER }}
+          DEPLOY_SSH_PORT: ${{ secrets.DEPLOY_SSH_PORT }}
+          DEPLOY_REMOTE_PATH: ${{ inputs.remote_path }}
+          DEPLOY_ENV_FILE: ${{ inputs.remote_env_file }}
+          COMPOSE_PROJECT_NAME: ${{ inputs.compose_project_name }}
+          MONITORING_PROFILE: ${{ inputs.monitoring_profile }}
+          RUN_MIGRATIONS: ${{ inputs.run_migrations }}
+          RUN_SMOKE: ${{ inputs.run_smoke }}
+          SMOKE_BASE_URL: ${{ inputs.smoke_base_url }}
+        run: |
+          SSH_KEY_FILE="$HOME/.ssh/aiosk_deploy_key" \
+          SSH_KNOWN_HOSTS_FILE="$HOME/.ssh/known_hosts" \
+          bash scripts/deploy-remote-compose.sh
+
+      - name: Deployment summary
+        run: |
+          {
+            echo "Remote compose deployment requested."
+            echo "- environment: ${{ inputs.environment }}"
+            echo "- backend image: $AIOSK_BACKEND_IMAGE"
+            echo "- frontend image: $AIOSK_FRONTEND_IMAGE"
+            echo "- remote path: ${{ inputs.remote_path }}"
+            echo "- monitoring profile: ${{ inputs.monitoring_profile }}"
+            echo "- run migrations: ${{ inputs.run_migrations }}"
+            echo "- run smoke: ${{ inputs.run_smoke }}"
+            echo "- smoke base URL: ${{ inputs.smoke_base_url }}"
+          } >> "$GITHUB_STEP_SUMMARY"

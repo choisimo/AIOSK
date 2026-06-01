@@ -1,7 +1,7 @@
-import type { Order, OrderItem } from '../types';
+import type { Order } from '../types';
 
 // 영수증 인쇄 전용 스타일
-export const printStyles = `
+const printStyles = `
   @media print {
     * {
       -webkit-print-color-adjust: exact !important;
@@ -78,17 +78,20 @@ export const printStyles = `
       font-size: 10px;
       color: #666;
     }
-    
-    .print-qr {
-      text-align: center;
-      margin: 15px 0;
-    }
-    
-    .no-print {
-      display: none !important;
-    }
   }
 `;
+
+const escapeHtml = (value: unknown): string => {
+  const htmlEscapes: Record<string, string> = {
+    '&': '&amp;',
+    '<': '&lt;',
+    '>': '&gt;',
+    '"': '&quot;',
+    "'": '&#39;'
+  };
+
+  return String(value ?? '').replace(/[&<>"']/g, (character) => htmlEscapes[character]);
+};
 
 // 영수증 인쇄 함수
 export const printReceipt = (orderData: Order) => {
@@ -98,8 +101,14 @@ export const printReceipt = (orderData: Order) => {
     return;
   }
 
-  const orderNumber = String(orderData.id || orderData.orderId).padStart(4, '0');
-  const currentTime = new Date().toLocaleString('ko-KR');
+  const orderNumber = escapeHtml(String(orderData.orderId).padStart(4, '0'));
+  const orderTime = escapeHtml(new Date(orderData.createdAt).toLocaleString('ko-KR', {
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+  }));
 
   const printContent = `
     <!DOCTYPE html>
@@ -118,28 +127,35 @@ export const printReceipt = (orderData: Order) => {
         <div class="print-order-info">
           <div>
             <div>주문번호: #${orderNumber}</div>
-            <div>주문시간: ${currentTime}</div>
+            <div>주문시간: ${orderTime}</div>
           </div>
         </div>
         
         <div class="print-items">
           <div style="font-weight: bold; margin-bottom: 8px;">주문 내역</div>
-          ${orderData.items.map((item: OrderItem) => `
-            <div class="print-item">
-              <div>
-                <div>${item.menuName || `메뉴 ${item.menuId}`}</div>
-                <div class="print-item-detail">
-                  ${(item.pricePerItem || 0).toLocaleString()}원 × ${item.quantity}개
+          ${orderData.items.map((item) => {
+            const itemName = escapeHtml(item.menuName);
+            const quantity = item.quantity.toLocaleString();
+            const pricePerItem = item.pricePerItem.toLocaleString();
+            const itemPrice = item.price.toLocaleString();
+
+            return `
+              <div class="print-item">
+                <div>
+                  <div>${itemName}</div>
+                  <div class="print-item-detail">
+                    ${pricePerItem}원 × ${quantity}개
+                  </div>
                 </div>
+                <div>${itemPrice}원</div>
               </div>
-              <div>${(item.price || 0).toLocaleString()}원</div>
-            </div>
-          `).join('')}
+            `;
+          }).join('')}
         </div>
         
         <div class="print-total">
           <div>총 결제금액</div>
-          <div>${(orderData.totalPrice || 0).toLocaleString()}원</div>
+          <div>${orderData.totalPrice.toLocaleString()}원</div>
         </div>
         
         <div class="print-footer">

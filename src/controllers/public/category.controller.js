@@ -1,5 +1,6 @@
 // src/controllers/public/category.controller.js
 const Category = require("../../models/category.model.js");
+const logger = require("../../utils/logger.js");
 
 // 공개 카테고리 목록 조회 (인증 불필요)
 exports.findAll = async (req, res) => {
@@ -16,7 +17,7 @@ exports.findAll = async (req, res) => {
 
     res.status(200).json(publicCategories);
   } catch (err) {
-    console.error("Error retrieving public categories:", err);
+    logger.logError(err, req, { context: 'Public category list' });
     res.status(500).json({
       message: "서버 오류가 발생했습니다. 잠시 후 다시 시도해주세요."
     });

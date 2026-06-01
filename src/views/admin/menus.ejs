@@ -1,0 +1,138 @@
+<div class="d-flex justify-content-between align-items-center mb-4">
+    <h2>메뉴 관리</h2>
+    <span class="badge bg-secondary"><%= menus.length %>개 메뉴</span>
+</div>
+
+<div class="card mb-4">
+    <div class="card-header">
+        <h6 class="m-0">새 메뉴</h6>
+    </div>
+    <div class="card-body">
+        <form method="post" action="/admin/menus" class="row g-3 align-items-end">
+            <input type="hidden" name="_csrf" value="<%= csrfToken %>">
+            <div class="col-lg-3 col-md-6">
+                <label for="newMenuName" class="form-label">메뉴명</label>
+                <input type="text" class="form-control" id="newMenuName" name="name" required>
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label for="newMenuCategory" class="form-label">카테고리</label>
+                <select class="form-select" id="newMenuCategory" name="categoryId" required>
+                    <option value="">선택</option>
+                    <% categories.forEach(function(category) { %>
+                        <option value="<%= category.id %>"><%= category.name %></option>
+                    <% }); %>
+                </select>
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label for="newMenuPrice" class="form-label">가격</label>
+                <input type="number" class="form-control" id="newMenuPrice" name="price" min="0" step="0.01" required>
+            </div>
+            <div class="col-lg-2 col-md-6">
+                <label for="newMenuStatus" class="form-label">상태</label>
+                <select class="form-select" id="newMenuStatus" name="status" required>
+                    <option value="FOR_SALE">판매중</option>
+                    <option value="SOLD_OUT">품절</option>
+                </select>
+            </div>
+            <div class="col-lg-3 col-md-6">
+                <label for="newMenuImageUrl" class="form-label">이미지 URL</label>
+                <input type="text" class="form-control" id="newMenuImageUrl" name="imageUrl">
+            </div>
+            <div class="col-lg-9 col-md-12">
+                <label for="newMenuDescription" class="form-label">설명</label>
+                <input type="text" class="form-control" id="newMenuDescription" name="description">
+            </div>
+            <div class="col-lg-3 col-md-12">
+                <button type="submit" class="btn btn-primary w-100">추가</button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-body">
+        <% menus.forEach(function(menu) { %>
+            <form id="menu-update-<%= menu.id %>" method="post" action="/admin/menus/<%= menu.id %>/update"><input type="hidden" name="_csrf" value="<%= csrfToken %>"></form>
+            <form id="menu-delete-<%= menu.id %>" method="post" action="/admin/menus/<%= menu.id %>/delete" onsubmit="return confirm('이 메뉴를 삭제하시겠습니까?');"><input type="hidden" name="_csrf" value="<%= csrfToken %>"></form>
+        <% }); %>
+        <div class="table-responsive">
+            <table class="table table-striped align-middle">
+                <thead>
+                    <tr>
+                        <th>ID</th>
+                        <th>메뉴명</th>
+                        <th>카테고리</th>
+                        <th>가격</th>
+                        <th>상태</th>
+                        <th>이미지 URL</th>
+                        <th>설명</th>
+                        <th>작업</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <% if (menus.length > 0) { %>
+                        <% menus.forEach(function(menu) { %>
+                            <tr>
+                                <td><%= menu.id %></td>
+                                <td>
+                                    <input type="text" class="form-control form-control-sm" name="name" value="<%= menu.name %>" form="menu-update-<%= menu.id %>" required>
+                                </td>
+                                <td>
+                                    <select class="form-select form-select-sm" name="categoryId" form="menu-update-<%= menu.id %>" required>
+                                        <% categories.forEach(function(category) { %>
+                                            <option value="<%= category.id %>" <%= category.id === menu.categoryId ? 'selected' : '' %>><%= category.name %></option>
+                                        <% }); %>
+                                    </select>
+                                    <% if (!menu.categoryId) { %>
+                                        <div class="small text-muted mt-1">현재: <%= menu.categoryName %></div>
+                                    <% } %>
+                                </td>
+                                <td>
+                                    <input type="number" class="form-control form-control-sm" name="price" value="<%= menu.price %>" min="0" step="0.01" form="menu-update-<%= menu.id %>" required>
+                                </td>
+                                <td>
+                                    <select class="form-select form-select-sm" name="status" form="menu-update-<%= menu.id %>" required>
+                                        <option value="FOR_SALE" <%= menu.status === 'FOR_SALE' ? 'selected' : '' %>>판매중</option>
+                                        <option value="SOLD_OUT" <%= menu.status === 'SOLD_OUT' ? 'selected' : '' %>>품절</option>
+                                    </select>
+                                </td>
+                                <td>
+                                    <% if (menu.imageUrl) { %>
+                                        <img src="<%= menu.imageUrl %>" alt="<%= menu.name %>" width="40" height="40" class="rounded object-fit-cover mb-1">
+                                    <% } %>
+                                    <input type="text" class="form-control form-control-sm" name="imageUrl" value="<%= menu.imageUrl %>" form="menu-update-<%= menu.id %>">
+                                </td>
+                                <td>
+                                    <textarea class="form-control form-control-sm" name="description" rows="2" form="menu-update-<%= menu.id %>"><%= menu.description %></textarea>
+                                </td>
+                                <td>
+                                    <div class="btn-group btn-group-sm">
+                                        <button type="submit" class="btn btn-outline-primary" form="menu-update-<%= menu.id %>">저장</button>
+                                        <button type="submit" class="btn btn-outline-danger" form="menu-delete-<%= menu.id %>">삭제</button>
+                                    </div>
+                                </td>
+                            </tr>
+                        <% }); %>
+                    <% } else { %>
+                        <tr>
+                            <td colspan="8" class="text-center text-muted py-4">등록된 메뉴가 없습니다.</td>
+                        </tr>
+                    <% } %>
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<% if (categories.length > 0) { %>
+    <div class="card mt-4">
+        <div class="card-header">
+            <h6 class="m-0">카테고리</h6>
+        </div>
+        <div class="card-body">
+            <% categories.forEach(function(category) { %>
+                <span class="badge bg-light text-dark border me-2 mb-2"><%= category.name %></span>
+            <% }); %>
+        </div>
+    </div>
+<% } %>

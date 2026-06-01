@@ -1,6 +1,4 @@
-import React from 'react';
-import { Box, Tabs, Tab, Typography } from '@mui/material';
-import { styled } from '@mui/material/styles';
+import { Tabs, Tab } from '@mui/material';
 import type { Category } from '../../types';
 
 interface CategoryNavProps {
@@ -9,68 +7,53 @@ interface CategoryNavProps {
   onCategorySelect: (categoryId: number | null) => void;
 }
 
-const StyledTabs = styled(Tabs)(({ theme }) => ({
-  backgroundColor: theme.palette.background.paper,
-  borderRadius: theme.spacing(1),
-  boxShadow: theme.shadows[2],
-  '& .MuiTabs-indicator': {
-    height: 4,
-    borderRadius: 2,
-  },
-}));
-
-const StyledTab = styled(Tab)(({ theme }) => ({
-  minHeight: 60,
-  fontSize: '16px',
-  fontWeight: 600,
-  textTransform: 'none',
-  padding: theme.spacing(2, 4),
-  '&.Mui-selected': {
-    fontWeight: 700,
-  },
-}));
-
-const CategoryNav: React.FC<CategoryNavProps> = ({
+const CategoryNav = ({
   categories,
   selectedCategoryId,
   onCategorySelect,
-}) => {
-  const handleChange = (_: React.SyntheticEvent, newValue: number | null) => {
-    onCategorySelect(newValue);
-  };
-
-  const currentValue = selectedCategoryId;
-
+}: CategoryNavProps) => {
   return (
-    <Box sx={{ width: '100%', mb: 3 }}>
-      <StyledTabs
-        value={currentValue}
-        onChange={handleChange}
-        variant="scrollable"
-        scrollButtons="auto"
-        allowScrollButtonsMobile
-      >
-        <StyledTab
-          label={
-            <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-              <Typography variant="inherit">전체 메뉴</Typography>
-            </Box>
-          }
-          value={null}
+    <Tabs
+      value={selectedCategoryId}
+      onChange={(_, newValue: number | null) => onCategorySelect(newValue)}
+      variant="scrollable"
+      scrollButtons="auto"
+      allowScrollButtonsMobile
+      sx={{
+        width: '100%',
+        mb: 3,
+        backgroundColor: 'background.paper',
+        borderRadius: 1,
+        boxShadow: 2,
+        '& .MuiTabs-indicator': {
+          height: 4,
+          borderRadius: 2,
+        },
+        '& .MuiTab-root': {
+          minHeight: 60,
+          fontSize: '16px',
+          fontWeight: 600,
+          textTransform: 'none',
+          px: 4,
+          py: 2,
+        },
+        '& .MuiTab-root.Mui-selected': {
+          fontWeight: 700,
+        },
+      }}
+    >
+      <Tab
+        label="전체 메뉴"
+        value={null}
+      />
+      {categories.map((category) => (
+        <Tab
+          key={category.id}
+          label={category.name}
+          value={category.id}
         />
-        {categories.map((category) => (
-          <StyledTab
-            key={category.id}
-            label={
-              <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                <Typography variant="inherit">{category.name}</Typography>
-              </Box>
-            }
-            value={category.id}
-          />
-        ))}
-      </StyledTabs>
-    </Box>
+      ))}
+    </Tabs>
   );
 };
 

@@ -1,0 +1,134 @@
+services:
+  db:
+    image: mysql:8.0
+    environment:
+      MYSQL_DATABASE: ${COMPOSE_DB_NAME:-kiosk_db}
+      MYSQL_USER: ${COMPOSE_DB_USER:-aiosk}
+      MYSQL_PASSWORD: ${COMPOSE_DB_PASSWORD:-aiosk_password}
+      MYSQL_ROOT_PASSWORD: ${COMPOSE_MYSQL_ROOT_PASSWORD:-root_password}
+    ports:
+      - "${COMPOSE_DB_PORT:-3306}:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+      - ./database_schema.sql:/docker-entrypoint-initdb.d/001-schema.sql:ro
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "127.0.0.1", "-u", "root", "-p${COMPOSE_MYSQL_ROOT_PASSWORD:-root_password}"]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+
+  backend:
+    build:
+      context: .
+    environment:
+      DB_HOST: db
+      DB_PORT: 3306
+      DB_USER: ${COMPOSE_DB_USER:-aiosk}
+      DB_PASSWORD: ${COMPOSE_DB_PASSWORD:-aiosk_password}
+      DB_NAME: ${COMPOSE_DB_NAME:-kiosk_db}
+      JWT_SECRET: ${JWT_SECRET:-change_this_to_at_least_32_characters}
+      SESSION_SECRET: ${SESSION_SECRET:-change_this_session_secret}
+      SESSION_STORE: ${SESSION_STORE:-mysql}
+      SESSION_CLEANUP_INTERVAL_MS: ${SESSION_CLEANUP_INTERVAL_MS:-900000}
+      SESSION_COOKIE_SECURE: ${SESSION_COOKIE_SECURE:-false}
+      SESSION_COOKIE_SAME_SITE: ${SESSION_COOKIE_SAME_SITE:-lax}
+      SESSION_COOKIE_MAX_AGE_MS: ${SESSION_COOKIE_MAX_AGE_MS:-86400000}
+      TRUST_PROXY: ${TRUST_PROXY:-0}
+      KIOSK_STATUS_TOKEN: ${KIOSK_STATUS_TOKEN:-}
+      METRICS_TOKEN: ${METRICS_TOKEN:-}
+      ALLOW_OPEN_METRICS: ${ALLOW_OPEN_METRICS:-false}
+      CORS_ORIGIN: ${CORS_ORIGIN:-}
+      SOCKET_CORS_ORIGIN: ${SOCKET_CORS_ORIGIN:-http://localhost:3000}
+      KIOSK_FRONTEND_URL: ${KIOSK_FRONTEND_URL:-http://localhost:5173}
+      API_PUBLIC_URL: ${API_PUBLIC_URL:-}
+      UPLOAD_DIR: ${UPLOAD_DIR:-uploads}
+      MAX_FILE_SIZE: ${MAX_FILE_SIZE:-5242880}
+      READINESS_DB_TIMEOUT_MS: ${READINESS_DB_TIMEOUT_MS:-2000}
+      REQUEST_BODY_LIMIT: ${REQUEST_BODY_LIMIT:-1mb}
+      RATE_LIMIT_WINDOW_MS: ${RATE_LIMIT_WINDOW_MS:-60000}
+      RATE_LIMIT_MAX_REQUESTS: ${RATE_LIMIT_MAX_REQUESTS:-300}
+      AUTH_RATE_LIMIT_WINDOW_MS: ${AUTH_RATE_LIMIT_WINDOW_MS:-60000}
+      AUTH_RATE_LIMIT_MAX_REQUESTS: ${AUTH_RATE_LIMIT_MAX_REQUESTS:-20}
+      SHUTDOWN_TIMEOUT_MS: ${SHUTDOWN_TIMEOUT_MS:-10000}
+      PORT: 3000
+      NODE_ENV: ${NODE_ENV:-development}
+      LOG_LEVEL: ${LOG_LEVEL:-info}
+      LOG_DIR: ${LOG_DIR:-logs}
+    ports:
+      - "${COMPOSE_BACKEND_PORT:-3000}:3000"
+    volumes:
+      - backend_logs:/app/logs
+      - backend_uploads:/app/uploads
+    depends_on:
+      db:
+        condition: service_healthy
+
+  frontend:
+    build:
+      context: ./frontend
+      args:
+        VITE_API_URL: ${FRONTEND_API_URL:-http://localhost:3000}
+        VITE_ALLOW_LOCAL_API_URL: ${VITE_ALLOW_LOCAL_API_URL:-true}
+        VITE_USE_MOCK_DATA: "false"
+        VITE_APP_VERSION: ${FRONTEND_APP_VERSION:-docker-local}
+        VITE_KIOSK_STATUS_TOKEN: ${FRONTEND_KIOSK_STATUS_TOKEN:-}
+    ports:
+      - "${COMPOSE_FRONTEND_PORT:-5173}:80"
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  prometheus:
+    image: prom/prometheus:v2.55.1
+    profiles:
+      - monitoring
+    command:
+      - --config.file=/etc/prometheus/prometheus.yml
+      - --storage.tsdb.path=/prometheus
+    ports:
+      - "${COMPOSE_PROMETHEUS_PORT:-9090}:9090"
+    volumes:
+      - ./monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - ./monitoring/alerts.yml:/etc/prometheus/alerts.yml:ro
+      - prometheus_data:/prometheus
+    depends_on:
+      backend:
+        condition: service_healthy
+
+  alertmanager:
+    image: prom/alertmanager:v0.27.0
+    profiles:
+      - monitoring
+    command:
+      - --config.file=/etc/alertmanager/alertmanager.yml
+      - --storage.path=/alertmanager
+    ports:
+      - "${COMPOSE_ALERTMANAGER_PORT:-9093}:9093"
+    volumes:
+      - ./monitoring/alertmanager.yml:/etc/alertmanager/alertmanager.yml:ro
+      - alertmanager_data:/alertmanager
+
+  grafana:
+    image: grafana/grafana:11.3.1
+    profiles:
+      - monitoring
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_ADMIN_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_ADMIN_PASSWORD:-change_this_grafana_password}
+      GF_USERS_ALLOW_SIGN_UP: "false"
+    ports:
+      - "${COMPOSE_GRAFANA_PORT:-3001}:3000"
+    volumes:
+      - ./monitoring/grafana/provisioning:/etc/grafana/provisioning:ro
+      - ./monitoring/grafana/dashboards:/var/lib/grafana/dashboards:ro
+      - grafana_data:/var/lib/grafana
+    depends_on:
+      - prometheus
+
+volumes:
+  mysql_data:
+  backend_logs:
+  backend_uploads:
+  prometheus_data:
+  alertmanager_data:
+  grafana_data:
